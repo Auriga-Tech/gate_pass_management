@@ -1,0 +1,21 @@
+.DS_Store
+*.pyc
+*.egg-info
+*.swp
+tags
+node_modules
+__pycache__
+.venv
+env
+.idea
+.vscode
+
+# Build output
+gatepass_management/public/dist
+dist/
+build/
+
+# Internal planning documents — not part of the distributed app.
+# These are the product plan and configuration reference used to build the app.
+# They are kept in the working tree for the team but never published.
+docs/internal/

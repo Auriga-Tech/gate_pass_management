@@ -1,0 +1,936 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-08-05 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sb_basic",
+  "naming_series",
+  "company",
+  "direction",
+  "gate_pass_type",
+  "cb_basic",
+  "posting_date",
+  "posting_time",
+  "purpose",
+  "status",
+  "sb_gate",
+  "location",
+  "gate",
+  "cost_center",
+  "cb_gate",
+  "security_officer",
+  "security_officer_name",
+  "sb_stamps",
+  "entry_datetime",
+  "cb_stamps",
+  "exit_datetime",
+  "turnaround_minutes",
+  "timestamps_amended",
+  "sb_party",
+  "party_type",
+  "party",
+  "party_name",
+  "party_display_name",
+  "cb_party",
+  "address",
+  "address_display",
+  "address_text",
+  "contact_person",
+  "contact_mobile",
+  "sb_source",
+  "source_type",
+  "source_doctype",
+  "source_document",
+  "is_multi_source",
+  "cb_source",
+  "source_sub_type",
+  "source_document_date",
+  "reference_no",
+  "reference_date",
+  "tracking_id",
+  "sb_vehicle",
+  "vehicle_number",
+  "vehicle_type",
+  "transporter",
+  "lr_number",
+  "lr_date",
+  "cb_vehicle",
+  "driver_name",
+  "driver_contact",
+  "driver_license",
+  "eway_bill_no",
+  "sb_weight",
+  "gross_weight",
+  "tare_weight",
+  "cb_weight",
+  "net_weight",
+  "weight_uom",
+  "sb_items",
+  "items",
+  "sb_totals",
+  "total_qty",
+  "total_packages",
+  "cb_totals",
+  "total_accepted_qty",
+  "total_amount",
+  "sb_compliance",
+  "compliance_status",
+  "compliance_html",
+  "compliance_checks",
+  "compliance_checked_on",
+  "compliance_override_by",
+  "compliance_override_reason",
+  "sb_discrepancy",
+  "has_discrepancy",
+  "total_shortage_qty",
+  "total_damaged_qty",
+  "total_rejected_qty",
+  "cb_discrepancy",
+  "discrepancy_notes",
+  "discrepancy_photo",
+  "discrepancy_reported_by",
+  "discrepancy_reported_on",
+  "sb_returnable",
+  "is_returnable",
+  "expected_return_date",
+  "actual_return_date",
+  "cb_returnable",
+  "returned_qty",
+  "return_status",
+  "sb_inspection",
+  "packaging_condition",
+  "documentation_status",
+  "cb_inspection",
+  "inspection_remarks",
+  "sb_docs",
+  "documents",
+  "sb_photos",
+  "vehicle_photo",
+  "cb_photos",
+  "goods_photo",
+  "cb_photos2",
+  "document_photo",
+  "sb_charges",
+  "charges",
+  "total_charges",
+  "sb_processing",
+  "references",
+  "processed_qty",
+  "cb_processing",
+  "per_processed",
+  "enforcement_mode",
+  "sb_footer",
+  "remarks",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "sb_basic",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "GP-.YYYY.-",
+   "default": "GP-.YYYY.-",
+   "reqd": 1,
+   "print_hide": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "direction",
+   "fieldtype": "Select",
+   "label": "Direction",
+   "options": "In\nOut",
+   "reqd": 1,
+   "bold": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Set automatically from the source flow. Choose it yourself only for passes with no source document."
+  },
+  {
+   "fieldname": "gate_pass_type",
+   "fieldtype": "Select",
+   "label": "Type",
+   "reqd": 1,
+   "default": "Material",
+   "options": "Material\nReturnable Material\nNon-Stock\nVisitor\nVehicle Only",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "cb_basic",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "reqd": 1,
+   "default": "Today",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "posting_time",
+   "fieldtype": "Time",
+   "label": "Time",
+   "reqd": 1,
+   "default": "Now"
+  },
+  {
+   "fieldname": "purpose",
+   "fieldtype": "Link",
+   "label": "Purpose",
+   "options": "Gate Pass Purpose"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "no_copy": 1,
+   "default": "Draft",
+   "options": "Draft\nAt Gate\nInside\nPartially Processed\nCompleted\nPending Return\nPartially Returned\nReturned\nOverdue Return\nClosed\nCancelled"
+  },
+  {
+   "fieldname": "sb_gate",
+   "fieldtype": "Section Break",
+   "label": "Gate & Location"
+  },
+  {
+   "fieldname": "location",
+   "fieldtype": "Link",
+   "label": "Location",
+   "options": "Gate Pass Location",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "gate",
+   "fieldtype": "Link",
+   "label": "Gate",
+   "options": "Gate"
+  },
+  {
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "label": "Cost Center",
+   "options": "Cost Center"
+  },
+  {
+   "fieldname": "cb_gate",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "security_officer",
+   "fieldtype": "Link",
+   "label": "Security Officer",
+   "options": "Employee",
+   "description": "Who was on the gate. Filled from your Employee record."
+  },
+  {
+   "fieldname": "security_officer_name",
+   "fieldtype": "Data",
+   "label": "Officer Name",
+   "read_only": 1,
+   "fetch_from": "security_officer.employee_name"
+  },
+  {
+   "fieldname": "sb_stamps",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "entry_datetime",
+   "fieldtype": "Datetime",
+   "label": "Entry Date & Time",
+   "read_only": 1,
+   "no_copy": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "cb_stamps",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "exit_datetime",
+   "fieldtype": "Datetime",
+   "label": "Exit Date & Time",
+   "read_only": 1,
+   "no_copy": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "turnaround_minutes",
+   "fieldtype": "Int",
+   "label": "Turnaround (Minutes)",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "timestamps_amended",
+   "fieldtype": "Check",
+   "label": "Timestamps Amended",
+   "read_only": 1,
+   "no_copy": 1,
+   "allow_on_submit": 1,
+   "description": "Set when entry or exit time was changed after submission. Every change is recorded in the Gate Pass Event Log."
+  },
+  {
+   "fieldname": "sb_party",
+   "fieldtype": "Section Break",
+   "label": "Party"
+  },
+  {
+   "fieldname": "party_type",
+   "fieldtype": "Link",
+   "label": "Party Type",
+   "options": "DocType",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "party",
+   "fieldtype": "Dynamic Link",
+   "label": "Party",
+   "options": "party_type",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "party_name",
+   "fieldtype": "Data",
+   "label": "Party Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "party_display_name",
+   "fieldtype": "Data",
+   "label": "Name",
+   "depends_on": "eval:!doc.party"
+  },
+  {
+   "fieldname": "cb_party",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "address",
+   "fieldtype": "Link",
+   "label": "Address",
+   "options": "Address"
+  },
+  {
+   "fieldname": "address_display",
+   "fieldtype": "Small Text",
+   "label": "Address",
+   "read_only": 1
+  },
+  {
+   "fieldname": "address_text",
+   "fieldtype": "Data",
+   "label": "Address"
+  },
+  {
+   "fieldname": "contact_person",
+   "fieldtype": "Link",
+   "label": "Contact",
+   "options": "Contact"
+  },
+  {
+   "fieldname": "contact_mobile",
+   "fieldtype": "Data",
+   "label": "Mobile"
+  },
+  {
+   "fieldname": "sb_source",
+   "fieldtype": "Section Break",
+   "label": "Source Document"
+  },
+  {
+   "fieldname": "source_type",
+   "fieldtype": "Link",
+   "label": "Source Flow",
+   "options": "Gate Pass Source",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_doctype",
+   "fieldtype": "Link",
+   "label": "Source DocType",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_document",
+   "fieldtype": "Dynamic Link",
+   "label": "Source Document",
+   "options": "source_doctype",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "is_multi_source",
+   "fieldtype": "Check",
+   "label": "Spans Multiple Documents",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_source",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "source_sub_type",
+   "fieldtype": "Data",
+   "label": "Sub Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_document_date",
+   "fieldtype": "Date",
+   "label": "Document Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_no",
+   "fieldtype": "Data",
+   "label": "Invoice / Challan No",
+   "in_list_view": 1,
+   "description": "The supplier's document number, as printed on the paperwork."
+  },
+  {
+   "fieldname": "reference_date",
+   "fieldtype": "Date",
+   "label": "Invoice / Challan Date"
+  },
+  {
+   "fieldname": "tracking_id",
+   "fieldtype": "Data",
+   "label": "Tracking ID",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "sb_vehicle",
+   "fieldtype": "Section Break",
+   "label": "Vehicle & Driver"
+  },
+  {
+   "fieldname": "vehicle_number",
+   "fieldtype": "Data",
+   "label": "Vehicle Number",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "vehicle_type",
+   "fieldtype": "Select",
+   "label": "Vehicle Type",
+   "options": "\nTruck\nTrailer\nContainer\nTempo\nCar\nTwo Wheeler\nHand Cart\nCourier\nOther"
+  },
+  {
+   "fieldname": "transporter",
+   "fieldtype": "Link",
+   "label": "Transporter",
+   "options": "Supplier"
+  },
+  {
+   "fieldname": "lr_number",
+   "fieldtype": "Data",
+   "label": "LR / Consignment No"
+  },
+  {
+   "fieldname": "lr_date",
+   "fieldtype": "Date",
+   "label": "LR Date"
+  },
+  {
+   "fieldname": "cb_vehicle",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "driver_name",
+   "fieldtype": "Data",
+   "label": "Driver Name"
+  },
+  {
+   "fieldname": "driver_contact",
+   "fieldtype": "Data",
+   "label": "Driver Contact"
+  },
+  {
+   "fieldname": "driver_license",
+   "fieldtype": "Data",
+   "label": "Driver Licence No"
+  },
+  {
+   "fieldname": "eway_bill_no",
+   "fieldtype": "Data",
+   "label": "E-Way Bill No"
+  },
+  {
+   "fieldname": "sb_weight",
+   "fieldtype": "Section Break",
+   "label": "Weighbridge",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "gross_weight",
+   "fieldtype": "Float",
+   "label": "Gross Weight"
+  },
+  {
+   "fieldname": "tare_weight",
+   "fieldtype": "Float",
+   "label": "Tare Weight"
+  },
+  {
+   "fieldname": "cb_weight",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "net_weight",
+   "fieldtype": "Float",
+   "label": "Net Weight",
+   "read_only": 1
+  },
+  {
+   "fieldname": "weight_uom",
+   "fieldtype": "Link",
+   "label": "Weight UOM",
+   "options": "UOM"
+  },
+  {
+   "fieldname": "sb_items",
+   "fieldtype": "Section Break",
+   "label": "Items"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Gate Pass Item"
+  },
+  {
+   "fieldname": "sb_totals",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "total_qty",
+   "fieldtype": "Float",
+   "label": "Total Qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_packages",
+   "fieldtype": "Int",
+   "label": "Total Packages",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_totals",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_accepted_qty",
+   "fieldtype": "Float",
+   "label": "Total Accepted",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "label": "Total Value",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_compliance",
+   "fieldtype": "Section Break",
+   "label": "Statutory Compliance"
+  },
+  {
+   "fieldname": "compliance_status",
+   "fieldtype": "Select",
+   "label": "Compliance",
+   "read_only": 1,
+   "bold": 1,
+   "options": "Not Applicable\nPending\nPassed\nFailed",
+   "default": "Not Applicable"
+  },
+  {
+   "fieldname": "compliance_html",
+   "fieldtype": "HTML",
+   "label": "Compliance"
+  },
+  {
+   "fieldname": "compliance_checks",
+   "fieldtype": "Table",
+   "label": "Checks",
+   "options": "Gate Pass Compliance Check",
+   "read_only": 1,
+   "hidden": 1
+  },
+  {
+   "fieldname": "compliance_checked_on",
+   "fieldtype": "Datetime",
+   "label": "Checked On",
+   "read_only": 1,
+   "hidden": 1
+  },
+  {
+   "fieldname": "compliance_override_by",
+   "fieldtype": "Link",
+   "label": "Overridden By",
+   "options": "User",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "compliance_override_reason",
+   "fieldtype": "Small Text",
+   "label": "Override Reason",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "sb_discrepancy",
+   "fieldtype": "Section Break",
+   "label": "Discrepancy",
+   "collapsible": 1,
+   "collapsible_depends_on": "has_discrepancy"
+  },
+  {
+   "fieldname": "has_discrepancy",
+   "fieldtype": "Check",
+   "label": "Discrepancy Recorded",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "total_shortage_qty",
+   "fieldtype": "Float",
+   "label": "Shortage",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "total_damaged_qty",
+   "fieldtype": "Float",
+   "label": "Damaged",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "total_rejected_qty",
+   "fieldtype": "Float",
+   "label": "Rejected",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "cb_discrepancy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "discrepancy_notes",
+   "fieldtype": "Text",
+   "label": "What Happened",
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "discrepancy_photo",
+   "fieldtype": "Attach Image",
+   "label": "Photo",
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "discrepancy_reported_by",
+   "fieldtype": "Link",
+   "label": "Reported By",
+   "options": "User",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "discrepancy_reported_on",
+   "fieldtype": "Datetime",
+   "label": "Reported On",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "sb_returnable",
+   "fieldtype": "Section Break",
+   "label": "Returnable",
+   "collapsible": 1,
+   "depends_on": "eval:doc.direction=='Out'"
+  },
+  {
+   "fieldname": "is_returnable",
+   "fieldtype": "Check",
+   "label": "Material Will Return"
+  },
+  {
+   "fieldname": "expected_return_date",
+   "fieldtype": "Date",
+   "label": "Expected Return",
+   "depends_on": "is_returnable"
+  },
+  {
+   "fieldname": "actual_return_date",
+   "fieldtype": "Date",
+   "label": "Actual Return",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "cb_returnable",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "returned_qty",
+   "fieldtype": "Float",
+   "label": "Returned Qty",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "return_status",
+   "fieldtype": "Select",
+   "label": "Return Status",
+   "read_only": 1,
+   "allow_on_submit": 1,
+   "options": "Not Applicable\nPending\nPartially Returned\nReturned\nOverdue",
+   "default": "Not Applicable"
+  },
+  {
+   "fieldname": "sb_inspection",
+   "fieldtype": "Section Break",
+   "label": "Inspection & Documents"
+  },
+  {
+   "fieldname": "packaging_condition",
+   "fieldtype": "Select",
+   "label": "Packaging Condition",
+   "options": "\nGood\nDamaged\nPartially Damaged"
+  },
+  {
+   "fieldname": "documentation_status",
+   "fieldtype": "Select",
+   "label": "Documentation",
+   "options": "\nComplete\nIncomplete"
+  },
+  {
+   "fieldname": "cb_inspection",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "inspection_remarks",
+   "fieldtype": "Small Text",
+   "label": "Inspection Notes"
+  },
+  {
+   "fieldname": "sb_docs",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "documents",
+   "fieldtype": "Table",
+   "label": "Required Documents",
+   "options": "Gate Pass Document"
+  },
+  {
+   "fieldname": "sb_photos",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "vehicle_photo",
+   "fieldtype": "Attach Image",
+   "label": "Vehicle Photo"
+  },
+  {
+   "fieldname": "cb_photos",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "goods_photo",
+   "fieldtype": "Attach Image",
+   "label": "Goods Photo"
+  },
+  {
+   "fieldname": "cb_photos2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "document_photo",
+   "fieldtype": "Attach Image",
+   "label": "Document Photo"
+  },
+  {
+   "fieldname": "sb_charges",
+   "fieldtype": "Section Break",
+   "label": "Charges",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "charges",
+   "fieldtype": "Table",
+   "label": "Charges",
+   "options": "Gate Pass Charge"
+  },
+  {
+   "fieldname": "total_charges",
+   "fieldtype": "Currency",
+   "label": "Total Charges",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_processing",
+   "fieldtype": "Section Break",
+   "label": "Processing",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "references",
+   "fieldtype": "Table",
+   "label": "Documents Created",
+   "options": "Gate Pass Reference",
+   "read_only": 1
+  },
+  {
+   "fieldname": "processed_qty",
+   "fieldtype": "Float",
+   "label": "Processed Qty",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "cb_processing",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "per_processed",
+   "fieldtype": "Percent",
+   "label": "% Processed",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "enforcement_mode",
+   "fieldtype": "Data",
+   "label": "Enforcement at Submit",
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "The preset in force when this gate pass was submitted, so historical documents are judged by the rules that were live at the time."
+  },
+  {
+   "fieldname": "sb_footer",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "options": "Gate Pass",
+   "read_only": 1,
+   "no_copy": 1,
+   "print_hide": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [
+  {
+   "link_doctype": "Gate Pass Event Log",
+   "link_fieldname": "gate_pass",
+   "group": "Audit"
+  }
+ ],
+ "modified": "2026-08-05 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Gate Pass",
+ "name": "Gate Pass",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "Gate Pass Operator",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "report": 1,
+   "print": 1,
+   "share": 1,
+   "email": 1
+  },
+  {
+   "role": "Gate Pass User",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "report": 1,
+   "print": 1,
+   "export": 1,
+   "share": 1,
+   "email": 1
+  },
+  {
+   "role": "Gate Pass Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "delete": 1,
+   "report": 1,
+   "print": 1,
+   "export": 1,
+   "share": 1,
+   "email": 1
+  },
+  {
+   "role": "Gate Pass Auditor",
+   "read": 1,
+   "report": 1,
+   "print": 1,
+   "export": 1
+  },
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "delete": 1,
+   "report": 1,
+   "print": 1,
+   "export": 1,
+   "share": 1,
+   "email": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "is_submittable": 1,
+ "autoname": "naming_series:",
+ "search_fields": "party,vehicle_number,reference_no,source_document",
+ "track_changes": 1
+}

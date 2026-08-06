@@ -1,0 +1,438 @@
+# Gate Pass Management — User Manual
+
+**Version 1.0 · Frappe / ERPNext v16**
+
+---
+
+## Who should read what
+
+| You are | Read |
+|---|---|
+| Security guard at the gate | [Part 1](#part-1--for-the-security-guard) |
+| Store keeper or purchase officer | [Part 2](#part-2--for-stores-and-purchase) |
+| Plant or warehouse manager | [Part 3](#part-3--for-managers) |
+| Implementing or configuring the app | [Part 4](#part-4--configuration) |
+| Troubleshooting | [Part 5](#part-5--when-something-goes-wrong) |
+
+---
+
+# Part 1 — For the security guard
+
+## What you are doing
+
+Every time material comes in or goes out, you create a **Gate Pass**. It records what physically crossed the gate, which vehicle brought it, who was driving, and anything wrong with it.
+
+Your record is independent of what the office says should have arrived. That is the point. If the paperwork says 100 bags and you count 80, the gate pass says 80 — and the store's receipt will say 80 too.
+
+## Before you start
+
+You need the **Gate Pass Operator** role. Ask your system administrator.
+
+## Creating a gate pass for material arriving
+
+### If a draft is already waiting for you
+
+Often the office submits the paperwork before the vehicle arrives, and the system creates a draft gate pass for you automatically.
+
+1. Open **Gate Pass** from the menu, or check your notifications.
+2. Look for a gate pass with status **Draft**.
+3. Open it. The items are already filled in.
+4. Skip to [step 4 below](#4-record-the-vehicle-and-driver).
+
+This is the easy path. You are confirming, not typing.
+
+### If you are starting from scratch
+
+#### 1. Create the gate pass
+
+Click **+ Add Gate Pass**.
+
+#### 2. Choose where the material is coming from
+
+Click **Get Items From** and pick what matches the paperwork the driver handed you:
+
+| The driver has… | Choose |
+|---|---|
+| A supplier's invoice or challan against your purchase order | **Purchase Order** |
+| Finished goods from a job worker | **Subcontracting Order (Finished Goods)** |
+| Material coming back from another of your plants | **Stock Entry (Incoming Transfer)** |
+| Material coming back with no paperwork raised yet | **Return Against an Outbound Transfer** |
+
+> **You do not choose "In" or "Out".** The system works that out from the document you picked. If you picked a purchase order, it knows material is coming in.
+
+#### 3. Pick the document
+
+Search by supplier or document number. Select it.
+
+The system fills in the items, showing for each one:
+
+- **Source Qty** — what was ordered
+- **Already Gate Passed** — what came in on earlier trips
+- **Pending** — what is still expected
+- **Qty** — starts at the pending amount; change it to what actually arrived
+
+#### 4. Record the vehicle and driver
+
+| Field | Notes |
+|---|---|
+| **Vehicle Number** | Required. As shown on the plate. |
+| **Driver Name** | Required. |
+| **Driver Contact** | Useful if something is wrong and the driver has already left. |
+| **Transporter** | If your company tracks transporters. |
+| **LR / Consignment No** | From the transporter's copy. |
+
+Your name fills in automatically as **Security Officer**. If it is blank, tell your administrator — your user account is not linked to your employee record.
+
+#### 5. Count and enter what actually arrived
+
+Go through the items. For each one, put the **real counted quantity** in **Qty**.
+
+> On some outward gate passes the Qty column is greyed out. That is deliberate — the invoice is fixed and you may not change it. Record any difference in the discrepancy columns instead (next step).
+
+#### 6. Record anything wrong
+
+If everything is fine, skip this.
+
+If not, fill in the columns beside the quantity:
+
+| Column | Use it when |
+|---|---|
+| **Short** | Fewer arrived than the paperwork says |
+| **Damaged** | Arrived broken, wet, crushed, leaking |
+| **Rejected** | You refused it at the gate |
+
+Pick a **Reason** for each. **Accepted** is calculated for you — you never do the arithmetic.
+
+Then open the **Discrepancy** section and write what happened in plain words. Attach a photo. This is what the office and the supplier will look at.
+
+> **Example.** Paperwork says 100 bags. You count 100, but 6 are torn and leaking.
+> Qty **100**, Damaged **6**, Reason **Damaged in Transit**. Accepted becomes **94** automatically.
+> The store's receipt will show 94 good and 6 rejected. Nobody has to re-enter anything.
+
+#### 7. Attach the documents
+
+The **Required Documents** section lists what your company needs. Photograph or upload each one. Items marked required will stop you submitting without them.
+
+Take a **vehicle photo** if your company asks for it.
+
+#### 8. Submit
+
+Click **Submit**.
+
+If something is missing you will get one message listing everything wrong — fix it all at once, rather than one problem at a time.
+
+Some messages are **warnings** in orange. Those record the issue and let you carry on.
+
+---
+
+## Creating a gate pass for material leaving
+
+Same process, with one important addition.
+
+Use **Get Items From** and choose **Sales Invoice**, **Delivery Note**, **Stock Entry (Send to Subcontractor)**, or one of the return options.
+
+### The compliance check — read this carefully
+
+For dispatches, you will see a **Statutory Compliance** section with coloured rows:
+
+| Colour | Meaning | What to do |
+|---|---|---|
+| 🟢 **Generated** | The document exists | Carry on |
+| 🔵 **Not Required** | Below the legal threshold | Carry on |
+| ⚪ **Not Applicable** | Does not apply here | Carry on |
+| 🟠 **Pending** | **Missing. Required by law.** | See below |
+| 🔴 **Failed / Unavailable** | Problem with the document | See below |
+
+**If a row is orange or red, do not let the vehicle leave.** The system will not let you submit.
+
+The message tells you who to contact, by name. For example:
+
+> **E-Way Bill — Pending**
+> E-Way Bill has not been generated for SI-2026-00123.
+> *Ask Priya Sharma (who created SI-2026-00123) to generate the E-Way Bill.*
+
+What to do:
+
+1. Call or message that person.
+2. Wait for them to generate it.
+3. Press **Re-check** on the gate pass. You will not lose anything you typed.
+4. When it turns green, submit.
+
+> **Why this matters.** A vehicle stopped without an E-Way Bill can be detained along with the goods, and the penalty falls on your company. This check is the last chance to catch it — once the vehicle is on the road, it is too late.
+
+If it is genuinely urgent, a manager can override the check. They must give a reason, and it is recorded permanently against their name.
+
+---
+
+## Returnable material
+
+For tools, dies, moulds, cylinders, testing equipment — anything that leaves and must come back.
+
+1. Create an outward gate pass as usual.
+2. Tick **Material Will Return**.
+3. Set the **Expected Return** date.
+4. Submit.
+
+The system tracks it. If it does not come back by the expected date, it is flagged **Overdue Return** and managers are notified.
+
+### When it comes back
+
+1. Create a new gate pass.
+2. **Get Items From → Returning Gate Pass (Out)**.
+3. Pick the original outward pass.
+4. Confirm what actually came back — record shortage or damage if some did not.
+5. Submit.
+
+The original pass closes automatically once everything is back.
+
+---
+
+## Correcting a mistake after submitting
+
+### Wrong entry or exit time
+
+Open the gate pass → **Correct → Amend Entry / Exit Time**. Enter the right time and a reason.
+
+The change is recorded permanently with your name, the old value and the new one, and the gate pass shows a visible warning that its times were amended.
+
+### Damage found while unloading
+
+Common — you cannot see everything at the gate.
+
+Open the gate pass → **Correct → Record Discrepancy**. Enter what you found and describe it.
+
+> This only works until the store creates the receipt. After that, the store must cancel the receipt first.
+
+### Something more serious
+
+Ask a Gate Pass Manager to cancel the gate pass so you can create a fresh one.
+
+---
+
+## Quick reference
+
+| Situation | What to do |
+|---|---|
+| Vehicle arrives with an invoice | Get Items From → Purchase Order |
+| Fewer goods than the paperwork | Enter the real count, put the difference in **Short** |
+| Goods are damaged | Full count in Qty, damaged amount in **Damaged**, pick a reason, add a photo |
+| Compliance row is orange | Do not release the vehicle. Contact the person named. Press **Re-check**. |
+| Qty column is greyed out | Deliberate. Use the discrepancy columns. |
+| Vehicle leaving with tools that come back | Tick **Material Will Return** and set a date |
+| Made a mistake after submitting | **Correct** menu, or ask a manager |
+
+---
+
+# Part 2 — For stores and purchase
+
+## Your morning worklist
+
+Open the **Pending Gate Passes** report. It shows every submitted gate pass with no receipt against it yet, with an ageing column.
+
+Anything above two days needs a reason. That report is the whole point of the app for your role.
+
+## Creating a receipt from a gate pass
+
+### From the gate pass
+
+Open it and click **Create Purchase Receipt** (or Subcontracting Receipt, depending on the flow).
+
+The receipt is created with:
+
+- **Accepted quantity** from the gate — what actually arrived, not what was ordered
+- **Damaged quantity** as rejected qty, in the rejected warehouse
+- Taxes, currency and terms from the original order, because the app uses ERPNext's own mapper
+- A link back to the gate pass
+
+Check it, then submit as normal.
+
+### From the receipt
+
+Some flows are configured the other way round: create the Purchase Receipt first, then **Get Items From → Gate Pass**. Only gate passes with quantity still available are offered.
+
+### Partial receiving
+
+One gate pass can produce several receipts over time — receive part today, the rest tomorrow. Each receipt draws down what is left, and the gate pass shows **% Processed**.
+
+You cannot receive more than the gate pass accepted. If you try, you will be told which line is over and by how much.
+
+## When quantities disagree
+
+If the gate says 94 accepted and 6 damaged, the receipt says exactly that. **The gate's physical count is authoritative.**
+
+If you believe the gate is wrong, do not edit the receipt — the gate pass and the receipt would then disagree, and the audit trail would show it. Instead, ask the gate to record a corrected discrepancy (they can, until the receipt is submitted), or ask a manager to cancel and amend.
+
+## Cancelling
+
+By default, a gate pass cannot be cancelled while a submitted receipt is linked to it — you will get a list of what to cancel first. Cancelling the receipt releases the quantity, and the gate pass becomes available again.
+
+---
+
+# Part 3 — For managers
+
+## What to watch daily
+
+| Report | What it tells you |
+|---|---|
+| **Pending Gate Passes** | Material sitting in the yard unreceived. Anything over 2 days is a problem. |
+| **Pending Returnable Gate Passes** | Tools and equipment out with subcontractors, overdue first. |
+| **Gate Pass Exceptions** | Every warning that fired, with the reason given. **This is where you find out how your process actually breaks.** |
+| **Compliance Exceptions** | Dispatches released without a statutory document, by whom and why. |
+| **Discrepancy Register** | Shortage and damage by supplier, transporter and reason. Feeds scorecards and claims. |
+
+## Tightening enforcement
+
+The app ships in **Advisory** mode — everything warns, nothing blocks. That is deliberate, so installing it breaks nothing.
+
+When you are ready to tighten:
+
+1. Run **Enforcement Impact Preview** and choose a candidate preset.
+2. It replays your last N days and lists exactly what *would* have been blocked, by rule and by user.
+3. If the list is small and reasonable, apply the preset.
+4. If it is large, fix the process first — or set just those rules to Block and leave the rest.
+
+Move **Advisory → Balanced** first. Reach **Strict** only if you have a reason.
+
+> Statutory compliance rules block under every preset, including Advisory. You can relax one deliberately, per flow, and it will be recorded — but it never happens as a side effect of choosing a preset.
+
+## Overriding a compliance check
+
+If you hold the right role, a blocked compliance check offers an override. You must give a reason. It is recorded permanently against your name and appears in the Compliance Exceptions report.
+
+Use it when you have independently confirmed the document exists but the system cannot see it. Do not use it to release a genuinely non-compliant dispatch.
+
+## Reading the audit trail
+
+Every gate pass has **View → Audit Trail**: creation, submission, entry and exit stamps, every target created or cancelled, every timestamp correction with old and new values, every warning that fired, every override.
+
+Nobody can edit or delete it. Not managers, not System Manager.
+
+---
+
+# Part 4 — Configuration
+
+## Three layers
+
+| Layer | Where | Decides |
+|---|---|---|
+| **Global policy** | Gate Pass Settings | Mandatory fields, features, naming, dating, permissions, notifications |
+| **Per flow** | Gate Pass Source | Field mapping, quantity policy, roles, documents, compliance, target document |
+| **Per rule** | Settings → Rules, and per-flow overrides | Whether each rule blocks, warns, or is ignored |
+
+## First-hour setup
+
+1. **Gate Pass Settings** → confirm **Enabled** and preset **Advisory**.
+2. Set **Enforce From Date** to your go-live date. Documents before it are untouched.
+3. Create **Gate Pass Location** records for your sites, and **Gate** records within them.
+4. Assign roles: Operator to security, User to stores and purchase, Manager to supervisors.
+5. Review the twelve shipped **Gate Pass Source** records. Disable any flow you do not use.
+
+## Adding a new flow
+
+Duplicate the closest existing Gate Pass Source and edit it. Key fields:
+
+| Field | Meaning |
+|---|---|
+| **Direction** | Gate passes from this flow are In or Out. Operators never choose. |
+| **Child Table / Item / Qty fields** | Which table and fields to read on the source document |
+| **Pending Formula** | How remaining quantity is calculated |
+| **Quantity Policy** | Editable, Locked to Source, or within tolerance |
+| **Party Type / Field** | Who the counterparty is; supports `link_field.target_field` |
+| **Allowed Roles** | Who may use this flow. Blank means everyone. |
+| **Target DocType / Creation Mode** | What it produces, and whether automatically |
+| **Auto-Create Draft** | Create a draft when the source is submitted |
+| **Checklist** | Documents required for this flow |
+| **Compliance Checks** | Statutory checks for this flow |
+| **Rule Overrides** | Override global rules for this flow only |
+
+Field names are validated against real metadata when you save — a typo fails in front of you, not at 2 a.m. at the gate.
+
+## Configuring rules
+
+**Gate Pass Settings → Rules.** Each row is one rule, with a permanent code.
+
+| Column | Purpose |
+|---|---|
+| **Action** | Block, Warn, or Ignore |
+| **Threshold** | Tolerance percentage or day limit, where the rule uses one |
+| **Bypass Roles** | These roles get a warning instead of a block |
+| **Require Override Reason** | Make the user state why before saving |
+| **Custom Message** | Replace the shipped wording |
+
+Resolution: **global preset → per-rule → per-flow override → bypass role**. Most specific wins. A bypass role can only loosen, never tighten.
+
+### Worked example
+
+You want over-quantity blocked for inward receipts, warned for outward deliveries, and bypassed by the plant manager:
+
+1. Settings → Rules → `QTY-LEDGER` → Action **Block**, Bypass Roles **Gate Pass Manager**.
+2. Gate Pass Source "Delivery Note — Dispatch" → Rule Overrides → `QTY-LEDGER` → **Warn**.
+
+A guard on a purchase order is blocked. The plant manager is warned and must give a reason. Delivery notes never block.
+
+## Field rules
+
+**Settings → Field Rules** makes any field mandatory, hidden or read-only — optionally only for one direction, gate pass type or flow. Enforced on the server as well as in the browser.
+
+## Compliance setup (India)
+
+Requires the `india_compliance` app. Without it, the checks report Not Applicable and the section stays hidden.
+
+1. Confirm GST Settings has e-invoicing and e-way bill enabled, with thresholds set.
+2. Open the relevant Gate Pass Source (Sales Invoice, Delivery Note).
+3. Under **Statutory Compliance**, confirm the checks are present and set to **Block**.
+4. Leave **Threshold Source** as *From Provider* so limits come from GST Settings and follow the law when it changes.
+
+---
+
+# Part 5 — When something goes wrong
+
+## Every error has a trace ID
+
+The same ID appears in three places:
+
+1. The **Gate Pass Event Log** for that gate pass (View → Audit Trail)
+2. The **Error Log**, linked to the document
+3. `logs/gatepass.log` in your bench — one JSON object per line
+
+Give the ID to whoever supports your system and they can find the whole story.
+
+## Common situations
+
+**"Why didn't my gate pass create a receipt?"**
+View → Audit Trail. A `Target Creation Failed` event carries the reason and the trace ID.
+
+**"It says everything has already been gate passed."**
+Someone already created a pass for it. The message lists them — open one and check.
+
+**"Two people created gate passes and now the quantity is over."**
+It should not be possible; the app locks the source document during validation. If it happened, capture the trace IDs of both passes and report it.
+
+**"A rule is blocking something it shouldn't."**
+Settings → Rules, find the code from the error message, set it to Warn or Ignore. If it should stay strict for most people, add a bypass role instead.
+
+**"Compliance says Provider Unavailable."**
+The app could not verify with `india_compliance` and **fails closed** on purpose. Check that app is installed and GST Settings is configured. A manager can override with a reason if you have confirmed the document exists another way.
+
+**"The app is causing problems and I need it to stop."**
+Gate Pass Settings → uncheck **Enabled**. Every check goes inert immediately and ERPNext behaves exactly as before installation. Nothing is deleted.
+
+## Getting help
+
+Include: the gate pass number, the exact error text, the trace ID, what you were doing, and your role. That is usually enough to diagnose without access to your system.
+
+---
+
+## Glossary
+
+| Term | Meaning |
+|---|---|
+| **Accepted Qty** | What was physically taken in or released. Flows to the receipt. |
+| **Advisory mode** | Preset where rules warn but do not block. The shipped default. |
+| **Consumption ledger** | How the app tracks what has already been gate passed against each order line. |
+| **Direction** | In or Out. Derived from the source flow. |
+| **Gate Pass Source** | A configured flow, e.g. "Purchase Order — Inward". |
+| **Pending Qty** | Still expected: ordered minus already received or gate passed. |
+| **Source Row** | The exact order line a gate pass row draws on. |
+| **Target document** | What a gate pass produces — a receipt, transfer or delivery note. |
+| **Trace ID** | Code on every error, linking the message to the logs. |

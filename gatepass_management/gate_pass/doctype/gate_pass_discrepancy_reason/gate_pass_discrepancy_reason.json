@@ -1,0 +1,113 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-08-05 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "reason",
+  "category",
+  "cb_disc",
+  "liable_party",
+  "requires_photo",
+  "is_active",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "reason",
+   "fieldtype": "Data",
+   "label": "Reason",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "label": "Category",
+   "options": "Shortage\nDamage\nRejection\nDocumentation\nOther",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "cb_disc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "liable_party",
+   "fieldtype": "Select",
+   "label": "Liable Party",
+   "options": "Unknown\nSupplier\nTransporter\nInternal\nCustomer",
+   "default": "Unknown",
+   "in_list_view": 1,
+   "description": "Drives the Discrepancy Register, which is what turns recorded discrepancies into supplier scorecards and transporter claims."
+  },
+  {
+   "fieldname": "requires_photo",
+   "fieldtype": "Check",
+   "label": "Photo Required"
+  },
+  {
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Active",
+   "default": "1"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-08-05 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Gate Pass",
+ "name": "Gate Pass Discrepancy Reason",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "Gate Pass Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "share": 1,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "Gate Pass User",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "Gate Pass Operator",
+   "read": 1
+  },
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "share": 1,
+   "print": 1,
+   "email": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "field:reason",
+ "naming_rule": "By fieldname",
+ "track_changes": 1
+}

@@ -1,0 +1,143 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-08-05 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "document",
+  "fieldname",
+  "is_mandatory",
+  "is_hidden",
+  "is_read_only",
+  "action",
+  "sb_fr_scope",
+  "applies_to_direction",
+  "applies_to_gate_pass_type",
+  "cb_fr_scope",
+  "applies_to_source_type",
+  "sb_fr_display",
+  "custom_label",
+  "default_value",
+  "cb_fr_display",
+  "depends_on"
+ ],
+ "fields": [
+  {
+   "fieldname": "document",
+   "fieldtype": "Select",
+   "label": "Document",
+   "options": "Gate Pass\nGate Pass Item",
+   "default": "Gate Pass",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "fieldname",
+   "fieldtype": "Data",
+   "label": "Fieldname",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "is_mandatory",
+   "fieldtype": "Check",
+   "label": "Mandatory",
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "is_hidden",
+   "fieldtype": "Check",
+   "label": "Hidden",
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "is_read_only",
+   "fieldtype": "Check",
+   "label": "Read Only",
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "action",
+   "fieldtype": "Select",
+   "label": "Action",
+   "options": "Block\nWarn\nIgnore",
+   "default": "Warn",
+   "in_list_view": 1,
+   "columns": 1,
+   "description": "What happens when a mandatory field is empty."
+  },
+  {
+   "fieldname": "sb_fr_scope",
+   "fieldtype": "Section Break",
+   "label": "Scope"
+  },
+  {
+   "fieldname": "applies_to_direction",
+   "fieldtype": "Select",
+   "label": "Direction",
+   "options": "Both\nIn\nOut",
+   "default": "Both"
+  },
+  {
+   "fieldname": "applies_to_gate_pass_type",
+   "fieldtype": "Select",
+   "label": "Gate Pass Type",
+   "options": "\nMaterial\nReturnable Material\nNon-Stock\nVisitor\nVehicle Only"
+  },
+  {
+   "fieldname": "cb_fr_scope",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "applies_to_source_type",
+   "fieldtype": "Link",
+   "label": "Source Type",
+   "options": "Gate Pass Source"
+  },
+  {
+   "fieldname": "sb_fr_display",
+   "fieldtype": "Section Break",
+   "label": "Display"
+  },
+  {
+   "fieldname": "custom_label",
+   "fieldtype": "Data",
+   "label": "Custom Label"
+  },
+  {
+   "fieldname": "default_value",
+   "fieldtype": "Data",
+   "label": "Default Value"
+  },
+  {
+   "fieldname": "cb_fr_display",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "depends_on",
+   "fieldtype": "Data",
+   "label": "Depends On (eval)"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-08-05 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Gate Pass",
+ "name": "Gate Pass Field Rule",
+ "owner": "Administrator",
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1,
+ "permissions": [],
+ "track_changes": 1
+}

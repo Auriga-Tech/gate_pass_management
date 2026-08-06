@@ -1,0 +1,19 @@
+/* Compliance status board on the Gate Pass form. */
+.gp-compliance { display: flex; flex-direction: column; gap: 8px; }
+.gp-compliance-row {
+	display: flex; align-items: flex-start; gap: 10px;
+	padding: 10px 12px; border: 1px solid var(--border-color); border-radius: var(--border-radius-md);
+	background: var(--fg-color);
+}
+.gp-compliance-row[data-status="Pending"],
+.gp-compliance-row[data-status="Failed"],
+.gp-compliance-row[data-status="Provider Unavailable"] {
+	border-color: var(--red-300); background: var(--red-50);
+}
+.gp-compliance-row[data-status="Generated"] { border-color: var(--green-300); background: var(--green-50); }
+.gp-compliance-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+.gp-compliance-body { flex: 1; min-width: 0; }
+.gp-compliance-label { font-weight: 600; }
+.gp-compliance-msg { color: var(--text-muted); font-size: var(--text-sm); }
+.gp-compliance-fix { color: var(--text-color); font-size: var(--text-sm); margin-top: 3px; }
+.gp-compliance-no { font-family: var(--font-stack-mono); font-size: var(--text-sm); }
