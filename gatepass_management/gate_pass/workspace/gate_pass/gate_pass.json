@@ -1,0 +1,367 @@
+{
+ "charts": [
+  {
+   "chart_name": "Gate Pass Volume",
+   "label": "Gate Pass Volume"
+  }
+ ],
+ "content": "[{\"id\": \"gp_head\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Gate Pass</b></span>\", \"col\": 12}}, {\"id\": \"gp_cards\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Gate Pass Pending Receipt\", \"col\": 3}}, {\"id\": \"gp_cards2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Gate Pass Inside Now\", \"col\": 3}}, {\"id\": \"gp_cards3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Gate Pass Overdue Returns\", \"col\": 3}}, {\"id\": \"gp_cards4\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Gate Pass Compliance Pending\", \"col\": 3}}, {\"id\": \"gp_sc1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"gp_sh1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Today</b></span>\", \"col\": 12}}, {\"id\": \"gp_cards5\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Gate Pass Today In\", \"col\": 3}}, {\"id\": \"gp_cards6\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Gate Pass Today Out\", \"col\": 3}}, {\"id\": \"gp_cards7\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Gate Pass Open Drafts\", \"col\": 3}}, {\"id\": \"gp_cards8\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Gate Pass Discrepancies\", \"col\": 3}}, {\"id\": \"gp_sc2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"gp_chart\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Gate Pass Volume\", \"col\": 12}}, {\"id\": \"gp_sc3\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"gp_ops\", \"type\": \"card\", \"data\": {\"card_name\": \"Gate Operations\", \"col\": 4}}, {\"id\": \"gp_rec\", \"type\": \"card\", \"data\": {\"card_name\": \"Reconciliation\", \"col\": 4}}, {\"id\": \"gp_ovr\", \"type\": \"card\", \"data\": {\"card_name\": \"Oversight\", \"col\": 4}}, {\"id\": \"gp_setup\", \"type\": \"card\", \"data\": {\"card_name\": \"Setup\", \"col\": 4}}, {\"id\": \"gp_mast\", \"type\": \"card\", \"data\": {\"card_name\": \"Masters\", \"col\": 4}}]",
+ "creation": "2026-08-06 10:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "shipment",
+ "idx": 0,
+ "indicator_color": "blue",
+ "is_hidden": 0,
+ "label": "Gate Pass",
+ "links": [
+  {
+   "hidden": 0,
+   "label": "Gate Operations",
+   "link_count": 3,
+   "onboard": 0,
+   "type": "Card Break",
+   "link_type": "DocType",
+   "link_to": null,
+   "description": "What the gate does every day."
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Gate Pass",
+   "link_count": 0,
+   "link_to": "Gate Pass",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link",
+   "dependencies": "",
+   "only_for": "",
+   "description": "Record material crossing the boundary."
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Pending Gate Passes",
+   "link_count": 0,
+   "link_to": "Pending Gate Passes",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": "Gate Pass",
+   "only_for": "",
+   "description": "What is in the yard waiting to be received."
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Gate Pass Register",
+   "link_count": 0,
+   "link_to": "Gate Pass Register",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": "Gate Pass",
+   "only_for": "",
+   "description": "Everything that crossed the gate, by period."
+  },
+  {
+   "hidden": 0,
+   "label": "Reconciliation",
+   "link_count": 3,
+   "onboard": 0,
+   "type": "Card Break",
+   "link_type": "DocType",
+   "link_to": null,
+   "description": "Does the paperwork match what physically moved?"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Gate Pass Reconciliation",
+   "link_count": 0,
+   "link_to": "Gate Pass Reconciliation",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": "Gate Pass",
+   "only_for": "",
+   "description": ""
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Discrepancy Register",
+   "link_count": 0,
+   "link_to": "Discrepancy Register",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": "Gate Pass",
+   "only_for": "",
+   "description": "Shortage and damage by supplier, transporter and cause."
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Pending Returnable Gate Passes",
+   "link_count": 0,
+   "link_to": "Pending Returnable Gate Passes",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": "Gate Pass",
+   "only_for": "",
+   "description": "What went out and has not come back."
+  },
+  {
+   "hidden": 0,
+   "label": "Oversight",
+   "link_count": 4,
+   "onboard": 0,
+   "type": "Card Break",
+   "link_type": "DocType",
+   "link_to": null,
+   "description": "Exceptions, compliance and turnaround."
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Gate Pass Exceptions",
+   "link_count": 0,
+   "link_to": "Gate Pass Exceptions",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": "",
+   "only_for": "",
+   "description": "Every rule that fired as a warning, and why."
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Compliance Exceptions",
+   "link_count": 0,
+   "link_to": "Compliance Exceptions",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": "",
+   "only_for": "",
+   "description": "Dispatches released without a statutory document."
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Vehicle Movement",
+   "link_count": 0,
+   "link_to": "Vehicle Movement",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": "Gate Pass",
+   "only_for": "",
+   "description": ""
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Gate Pass Event Log",
+   "link_count": 0,
+   "link_to": "Gate Pass Event Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": "",
+   "only_for": "",
+   "description": "The immutable audit trail."
+  },
+  {
+   "hidden": 0,
+   "label": "Setup",
+   "link_count": 4,
+   "onboard": 0,
+   "type": "Card Break",
+   "link_type": "DocType",
+   "link_to": null,
+   "description": "Configure once. No code required."
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Gate Pass Settings",
+   "link_count": 0,
+   "link_to": "Gate Pass Settings",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link",
+   "dependencies": "",
+   "only_for": "",
+   "description": "Rules, features, permissions and enforcement."
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Gate Pass Source",
+   "link_count": 0,
+   "link_to": "Gate Pass Source",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link",
+   "dependencies": "",
+   "only_for": "",
+   "description": "One record per flow. Twelve ship with the app."
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Enforcement Impact Preview",
+   "link_count": 0,
+   "link_to": "Enforcement Impact Preview",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": "",
+   "only_for": "",
+   "description": "What would break if you tightened the rules."
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Gate Pass Discrepancy Reason",
+   "link_count": 0,
+   "link_to": "Gate Pass Discrepancy Reason",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": "",
+   "only_for": "",
+   "description": ""
+  },
+  {
+   "hidden": 0,
+   "label": "Masters",
+   "link_count": 3,
+   "onboard": 0,
+   "type": "Card Break",
+   "link_type": "DocType",
+   "link_to": null,
+   "description": ""
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Gate Pass Location",
+   "link_count": 0,
+   "link_to": "Gate Pass Location",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": "",
+   "only_for": "",
+   "description": ""
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Gate",
+   "link_count": 0,
+   "link_to": "Gate",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": "",
+   "only_for": "",
+   "description": ""
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Gate Pass Purpose",
+   "link_count": 0,
+   "link_to": "Gate Pass Purpose",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": "",
+   "only_for": "",
+   "description": ""
+  }
+ ],
+ "modified": "2026-08-06 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Gate Pass",
+ "name": "Gate Pass",
+ "number_cards": [
+  {
+   "label": "Gate Pass Inside Now",
+   "number_card_name": "Gate Pass Inside Now"
+  },
+  {
+   "label": "Gate Pass Pending Receipt",
+   "number_card_name": "Gate Pass Pending Receipt"
+  },
+  {
+   "label": "Gate Pass Overdue Returns",
+   "number_card_name": "Gate Pass Overdue Returns"
+  },
+  {
+   "label": "Gate Pass Today In",
+   "number_card_name": "Gate Pass Today In"
+  },
+  {
+   "label": "Gate Pass Today Out",
+   "number_card_name": "Gate Pass Today Out"
+  },
+  {
+   "label": "Gate Pass Compliance Pending",
+   "number_card_name": "Gate Pass Compliance Pending"
+  },
+  {
+   "label": "Gate Pass Open Drafts",
+   "number_card_name": "Gate Pass Open Drafts"
+  },
+  {
+   "label": "Gate Pass Discrepancies",
+   "number_card_name": "Gate Pass Discrepancies"
+  }
+ ],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 30.0,
+ "shortcuts": [
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "label": "Awaiting Receipt",
+   "link_to": "Pending Gate Passes",
+   "type": "Report"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Gate Pass",
+   "link_to": "Gate Pass",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "",
+   "label": "Settings",
+   "link_to": "Gate Pass Settings",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Source Flows",
+   "link_to": "Gate Pass Source",
+   "type": "DocType"
+  }
+ ],
+ "title": "Gate Pass"
+}

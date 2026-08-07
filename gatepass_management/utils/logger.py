@@ -26,32 +26,48 @@ LEVELS = {
 }
 
 
-class _JsonFormatter(logging.Formatter):
-	RESERVED = {
-		"name", "msg", "args", "levelname", "levelno", "pathname", "filename",
-		"module", "exc_info", "exc_text", "stack_info", "lineno", "funcName",
-		"created", "msecs", "relativeCreated", "thread", "threadName",
-		"processName", "process", "taskName", "message", "asctime",
-	}
+# Attribute names LogRecord owns. Passing any of these in `extra` makes
+# logging.makeRecord raise KeyError, so every field we add is nested under a
+# single safe key instead of being spread across the record. Doing it this way
+# means a future caller cannot accidentally pick a colliding field name —
+# `created`, `module`, `name`, `process` and `message` are all plausible things
+# to want to log, and all of them would blow up.
+_PAYLOAD_KEY = "gp_fields"
 
+
+class _JsonFormatter(logging.Formatter):
 	def format(self, record: logging.LogRecord) -> str:
 		payload = {
 			"ts": self.formatTime(record, "%Y-%m-%dT%H:%M:%S"),
 			"level": record.levelname,
 			"event": record.getMessage(),
 		}
-		for key, value in record.__dict__.items():
-			if key not in self.RESERVED and not key.startswith("_"):
-				payload[key] = value
+		payload.update(getattr(record, _PAYLOAD_KEY, None) or {})
 
 		payload.setdefault("user", _safe_user())
 		payload.setdefault("site", getattr(frappe.local, "site", None))
+
+		if record.exc_info:
+			payload["exc"] = self.formatException(record.exc_info)
 
 		try:
 			return json.dumps(payload, default=str)
 		except Exception:
 			return json.dumps({"ts": payload["ts"], "level": payload["level"],
 			                   "event": payload["event"], "_serialise_error": True})
+
+
+class _GatePassLogger(logging.LoggerAdapter):
+	"""Moves caller-supplied fields into one nested key.
+
+	Call sites keep the natural `logger.info("event", extra={...})` shape; the
+	adapter is what keeps that safe.
+	"""
+
+	def process(self, msg, kwargs):
+		fields = kwargs.pop("extra", None) or {}
+		kwargs["extra"] = {_PAYLOAD_KEY: fields}
+		return msg, kwargs
 
 
 def _safe_user() -> str | None:
@@ -61,14 +77,14 @@ def _safe_user() -> str | None:
 		return None
 
 
-def get_logger() -> logging.Logger:
+def get_logger() -> logging.LoggerAdapter:
 	logger = frappe.logger(LOGGER_NAME, allow_site=True, file_count=10)
 	if not getattr(logger, "_gatepass_configured", False):
 		for handler in logger.handlers:
 			handler.setFormatter(_JsonFormatter())
 		logger.setLevel(_configured_level())
 		logger._gatepass_configured = True
-	return logger
+	return _GatePassLogger(logger, {})
 
 
 def _configured_level() -> int:

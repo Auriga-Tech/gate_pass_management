@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import frappe
 from frappe import _
+from frappe.query_builder.functions import Sum
 from frappe.utils import cint, flt
 
 from gatepass_management.utils.logger import get_logger
@@ -55,7 +56,7 @@ def consumed_qty(source_rows: list[str]) -> dict[str, float]:
 		frappe.qb.from_(GPI)
 		.inner_join(GP)
 		.on(GP.name == GPI.parent)
-		.select(GPI.source_row, frappe.qb.functions.Sum(GPI.qty).as_("consumed"))
+		.select(GPI.source_row, Sum(GPI.qty).as_("consumed"))
 		.where(GPI.source_row.isin(source_rows))
 		.where(GP.docstatus == 1)
 		.groupby(GPI.source_row)
@@ -88,7 +89,7 @@ def consumed_qty_for_update(
 		frappe.qb.from_(GPI)
 		.inner_join(GP)
 		.on(GP.name == GPI.parent)
-		.select(GPI.source_row, frappe.qb.functions.Sum(GPI.qty).as_("consumed"))
+		.select(GPI.source_row, Sum(GPI.qty).as_("consumed"))
 		.where(GPI.source_row.isin(source_rows))
 		.where(GP.docstatus == 1)
 		.groupby(GPI.source_row)

@@ -205,19 +205,19 @@
    "fieldname": "uom_field",
    "fieldtype": "Data",
    "label": "UOM Fieldname",
-   "default": "uom"
+   "description": " Leave blank if this child table has no such field."
   },
   {
    "fieldname": "rate_field",
    "fieldtype": "Data",
    "label": "Rate Fieldname",
-   "default": "rate"
+   "description": " Leave blank if this child table has no such field."
   },
   {
    "fieldname": "warehouse_field",
    "fieldtype": "Data",
    "label": "Warehouse Fieldname",
-   "default": "warehouse"
+   "description": " Leave blank if this child table has no such field."
   },
   {
    "fieldname": "bom_field",
@@ -365,7 +365,7 @@
    "fieldtype": "Select",
    "label": "Creation Mode",
    "options": "None\nAuto on Submit\nManual Button\nFrom Target Form",
-   "default": "Manual Button",
+   "default": "None",
    "description": "Auto on Submit creates the target inside the same transaction — a failure aborts the submit rather than leaving a gate pass that silently produced nothing."
   },
   {

@@ -35,6 +35,11 @@ def after_migrate():
 	seed_settings()
 	reconcile_rules()
 	fixtures.seed_sources()
+	# Only when the table is empty. Sites that installed before these masters
+	# existed still get them; a site that deliberately deleted one does not get
+	# it back on every migrate.
+	if not frappe.db.count("Gate Pass Discrepancy Reason"):
+		fixtures.seed_masters()
 
 
 def before_uninstall():
