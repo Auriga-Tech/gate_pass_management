@@ -14,6 +14,10 @@
 | Implementing or configuring the app | [Part 4](#part-4--configuration) |
 | Troubleshooting | [Part 5](#part-5--when-something-goes-wrong) |
 
+Part 4 explains every master in plain language, including a dedicated section on
+**Gate Pass Source** — the one piece of configuration worth reading properly
+before you change anything.
+
 ---
 
 # Part 1 — For the security guard
@@ -327,25 +331,259 @@ Nobody can edit or delete it. Not managers, not System Manager.
 4. Assign roles: Operator to security, User to stores and purchase, Manager to supervisors.
 5. Review the twelve shipped **Gate Pass Source** records. Disable any flow you do not use.
 
-## Adding a new flow
+---
 
-Duplicate the closest existing Gate Pass Source and edit it. Key fields:
+# Understanding the masters
 
-| Field | Meaning |
+Six things you set up before or during use. Five are simple lists. The sixth —
+Gate Pass Source — is the one that does the real work, and it gets its own
+section after this table.
+
+| Master | What it is | Do you have to set it up? |
+|---|---|---|
+| **Gate Pass Location** | Your sites, plants or branches | Yes, at least one |
+| **Gate** | The physical gates at a location | Only if you have more than one |
+| **Gate Pass Purpose** | A label for *why* material is moving | Optional |
+| **Gate Pass Discrepancy Reason** | The list of reasons for shortage or damage | Eight ship ready to use |
+| **Gate Pass Source** | A recipe telling the app how to read one kind of document | Twelve ship ready to use |
+| **Gate Pass Settings** | Every global switch and rule | Works out of the box |
+
+## Gate Pass Location
+
+Your physical sites. A factory, a warehouse, a branch depot.
+
+You need at least one. If you have a single site, create it, and you will
+rarely think about it again.
+
+Locations form a tree, so a large plant can have zones beneath it (`Pune Plant`
+→ `North Yard`, `South Yard`). Reports can then be filtered by site, and if you
+switch on **Restrict by Location** in Settings, staff at one site stop seeing
+another site's gate passes.
+
+**To create one:** Gate Pass Location → New → name it, pick the company, save.
+
+## Gate
+
+The actual gates in the fence. Only worth setting up if a location has more
+than one and you care which was used.
+
+Each gate belongs to a location. You can restrict a gate to one direction —
+useful when goods-in and goods-out use separate entrances — set its operating
+hours, and name a default security officer.
+
+**To create one:** Gate → New → name it, pick its Location, save.
+
+## Gate Pass Purpose
+
+A short label for why something is moving: *Job Work*, *Repair*, *Sample*,
+*Scrap Sale*, *Inter-Branch Transfer*.
+
+Nothing depends on it. It exists so you can filter and group later — "show me
+everything that went out for repair last quarter". Skip it until you want that.
+
+## Gate Pass Discrepancy Reason
+
+The dropdown the guard picks from when something is short or damaged.
+
+Eight are created for you: Short Delivered, Lost in Transit, Damaged in
+Transit, Damaged Packaging, Wrong Item Supplied, Quality Rejected at Gate,
+Documents Missing, Counting Difference.
+
+Each reason carries two things that matter:
+
+- **Category** — Shortage, Damage, Rejection or Documentation.
+- **Liable Party** — Supplier, Transporter, Internal or Unknown.
+
+Liable Party is the important one. It is what lets the **Discrepancy Register**
+answer "how much did this transporter cost us last quarter" rather than just
+listing incidents. Set it thoughtfully; it turns a log into a claim.
+
+**To add your own:** Gate Pass Discrepancy Reason → New → name it, pick a
+category and who is usually at fault, save.
+
+---
+
+# Gate Pass Source — the one to understand
+
+This is the master people find confusing, so here it is slowly.
+
+## The problem it solves
+
+A guard at the gate is holding a piece of paper. It might be a supplier's
+invoice against a purchase order, a delivery challan for a customer, or a
+transfer note for material going to another plant.
+
+Each of those means the app has to look somewhere different in ERPNext. A
+purchase order keeps its lines in a table called `items` and calls the quantity
+`qty`. A subcontracting order keeps raw materials in `supplied_items` and calls
+the quantity `required_qty`. Stock entries call the rate `basic_rate`, while
+purchase orders call it `rate`.
+
+Without something to describe these differences, every new kind of document
+would need a programmer.
+
+## What it actually is
+
+**A Gate Pass Source is a recipe.** One recipe per kind of document you accept
+at the gate. It tells the app:
+
+> *"When the guard says they are holding a Purchase Order — look in the `items`
+> table, the item is in `item_code`, the quantity is in `qty`, this is material
+> coming **In**, the counterparty is the `supplier`, the guard may correct the
+> quantity, and afterwards this should produce a Purchase Receipt."*
+
+Write that down once and the app can handle purchase orders for ever. Write a
+second recipe and it handles delivery notes too. No code.
+
+## What the guard sees
+
+Recipes are why the **Get Items From** button has a list under it. Each recipe
+you have enabled puts one entry there:
+
+```
+Get Items From ▸  Purchase Order
+                  Subcontracting Order (Finished Goods)
+                  Stock Entry (Send to Subcontractor)
+                  Sales Invoice
+                  Delivery Note
+                  ...
+```
+
+The guard picks the one matching their paperwork. Everything after that —
+whether it is In or Out, which fields are filled, whether quantities can be
+edited, what documents are required, what compliance is checked — comes from
+that recipe. **The guard makes one choice; the recipe makes the rest.**
+
+## The twelve you already have
+
+You do not need to create any of these. They are installed and working:
+
+| The guard is holding | Direction |
 |---|---|
-| **Direction** | Gate passes from this flow are In or Out. Operators never choose. |
-| **Child Table / Item / Qty fields** | Which table and fields to read on the source document |
-| **Pending Formula** | How remaining quantity is calculated |
-| **Quantity Policy** | Editable, Locked to Source, or within tolerance |
-| **Party Type / Field** | Who the counterparty is; supports `link_field.target_field` |
-| **Allowed Roles** | Who may use this flow. Blank means everyone. |
-| **Target DocType / Creation Mode** | What it produces, and whether automatically |
-| **Auto-Create Draft** | Create a draft when the source is submitted |
-| **Checklist** | Documents required for this flow |
-| **Compliance Checks** | Statutory checks for this flow |
-| **Rule Overrides** | Override global rules for this flow only |
+| Purchase Order | In |
+| Subcontracting Order (finished goods coming back) | In |
+| Subcontracting Order (raw material going out) | Out |
+| Stock Entry — send to subcontractor | Out |
+| Stock Entry — transfer to another plant | Out |
+| Stock Entry — transfer arriving from another plant | In |
+| Stock Entry — return with no return document raised yet | In |
+| Purchase Receipt return (goods back to supplier) | Out |
+| Subcontracting Receipt return | Out |
+| Sales Invoice | Out |
+| Delivery Note | Out |
+| A returnable gate pass coming back | In |
 
-Field names are validated against real metadata when you save — a typo fails in front of you, not at 2 a.m. at the gate.
+Open **Gate Pass Source** to see them. Disable any you do not use — that
+shortens the guard's menu, which is a real kindness at a busy gate.
+
+## The settings inside a recipe, in plain terms
+
+You only meet these if you are creating or adjusting one.
+
+**Where to read the data**
+
+| Setting | In plain words |
+|---|---|
+| Source DocType | Which ERPNext document this recipe is about |
+| Child Table | Which table on it holds the item lines |
+| Item / Quantity / UOM / Rate / Warehouse Field | What each column is called in that table |
+| Pending Formula | How to work out what is still expected |
+
+*Leave a field blank if the document has no such column.* Blank means "does not
+apply" and is always safe. The app checks these names against the real document
+when you save, so a typo fails in front of you rather than at 2 a.m. at the gate.
+
+**How it behaves**
+
+| Setting | In plain words |
+|---|---|
+| Direction | Is this material coming in or going out? |
+| Quantity Policy | May the guard change the quantity? |
+| Allow Discrepancy | May the guard record shortage or damage? |
+| Allowed Roles | Who may use this recipe. Blank means everyone. |
+| Auto-Create Draft | Should a gate pass appear by itself when this document is submitted? |
+
+**Quantity Policy** deserves a moment, because it is where most of the judgement
+sits:
+
+- **Editable** — the guard counts and types what arrived. Correct for a
+  purchase order: nobody knows what is on the truck until it is counted.
+- **Locked to Source** — the quantity is fixed and greyed out. Correct for a
+  sales invoice: the guard verifies what leaves, they do not get to restate the
+  invoice. Differences go in the discrepancy columns instead.
+- **Editable within Tolerance** — small differences allowed, large ones flagged.
+- **Prefilled, Editable** — starts filled in, guard can adjust.
+
+**What happens afterwards**
+
+| Setting | In plain words |
+|---|---|
+| Target DocType | What ERPNext document this can produce |
+| Creation Mode | Automatically on submit, by a button, or not at all |
+| Gate Pass on Target Document | Not required / required / forbidden |
+| Target Only Via Gate Pass | Stop anyone creating that document without a gate pass |
+
+**Extra requirements**
+
+| Setting | In plain words |
+|---|---|
+| Checklist | Documents the guard must attach for this kind of movement |
+| Compliance Checks | Statutory documents to verify, e.g. E-Way Bill |
+| Rule Overrides | Bend a global rule for this recipe only |
+
+## Making a new one
+
+Almost always: **find the closest existing recipe, duplicate it, change what
+differs.** Starting from a blank form means filling in field names you would
+have to look up.
+
+1. Gate Pass Source → open the closest match → menu → **Duplicate**.
+2. Rename it, and give it a Button Label the guard will recognise.
+3. Change the Source DocType and the field names to match.
+4. Set the direction and quantity policy.
+5. Save. If a field name is wrong, the app tells you which one.
+6. Test it: open a gate pass, press Get Items From, and confirm your new entry
+   appears and pulls the right lines.
+
+> A recipe you have edited is yours. The app refreshes the twelve shipped
+> recipes on upgrade but never touches one you have created or taken over, so
+> your changes survive updates.
+
+---
+
+# Gate Pass Settings — the global switchboard
+
+One page, ten tabs. It works out of the box; you visit it to change policy, not
+to make the app run.
+
+| Tab | What lives there |
+|---|---|
+| **General** | The master **Enabled** switch, the enforcement preset, and the date from which rules apply |
+| **Naming** | The numbering series for gate passes |
+| **Dating** | How far back or forward a gate pass may be dated |
+| **Party & Items** | Which party types are allowed; whether free-text items are permitted |
+| **Required Fields** | Which fields are compulsory — vehicle, driver, location, photo, and so on |
+| **Features** | Switches for returnable tracking, discrepancy, compliance, charges, weighbridge, batch/serial |
+| **Tracking ID** | An optional reference built from a template |
+| **Returnable** | Default return window, reminders, who gets escalations |
+| **Discrepancy** | Whether damage may be recorded after submission, and who may |
+| **Compliance** | Whether to block when a provider is unreachable, who may override |
+| **Automation** | Auto-created drafts, and when unclaimed ones expire |
+| **Lifecycle** | Cancellation policy, attachment locking, who may amend timestamps |
+| **Access Restrictions** | Restrict visibility by flow, location, gate or company |
+| **Notifications** | Who is told what, and by which channel |
+| **Rules** | The 44 configurable rules — see below |
+| **Field Rules** | Make any field mandatory, hidden or read-only |
+| **Charge Types** | The charges to seed on a new gate pass |
+| **Advanced** | Lock timeout, log level, audit retention |
+
+**The two you will touch first:**
+
+- **Enabled** — the master switch. Turn it off and the app goes completely
+  inert; ERPNext behaves exactly as it did before installation. Nothing is
+  deleted. This is your emergency brake.
+- **Enforcement Preset** — Advisory, Balanced, Strict or Custom. Ships on
+  **Advisory**, where everything warns and nothing blocks.
 
 ## Configuring rules
 
