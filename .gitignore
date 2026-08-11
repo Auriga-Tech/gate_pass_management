@@ -125,6 +125,9 @@ service-account*.json
 # ---------------------------------------------------------------------------
 docs/internal/
 
+# Knowledge graph output — regenerated from the source, never distributed.
+graphify-out/
+
 # Scratch space
 scratch/
 tmp/
