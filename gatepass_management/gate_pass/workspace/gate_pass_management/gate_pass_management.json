@@ -5,7 +5,7 @@
    "label": "Gate Pass Volume"
   }
  ],
- "content": "[{\"id\": \"gp_head\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Gate Pass</b></span>\", \"col\": 12}}, {\"id\": \"gp_cards\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Gate Pass Pending Receipt\", \"col\": 3}}, {\"id\": \"gp_cards2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Gate Pass Inside Now\", \"col\": 3}}, {\"id\": \"gp_cards3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Gate Pass Overdue Returns\", \"col\": 3}}, {\"id\": \"gp_cards4\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Gate Pass Compliance Pending\", \"col\": 3}}, {\"id\": \"gp_sc1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"gp_sh1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Today</b></span>\", \"col\": 12}}, {\"id\": \"gp_cards5\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Gate Pass Today In\", \"col\": 3}}, {\"id\": \"gp_cards6\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Gate Pass Today Out\", \"col\": 3}}, {\"id\": \"gp_cards7\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Gate Pass Open Drafts\", \"col\": 3}}, {\"id\": \"gp_cards8\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Gate Pass Discrepancies\", \"col\": 3}}, {\"id\": \"gp_sc2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"gp_chart\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Gate Pass Volume\", \"col\": 12}}, {\"id\": \"gp_sc3\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"gp_ops\", \"type\": \"card\", \"data\": {\"card_name\": \"Gate Operations\", \"col\": 4}}, {\"id\": \"gp_rec\", \"type\": \"card\", \"data\": {\"card_name\": \"Reconciliation\", \"col\": 4}}, {\"id\": \"gp_ovr\", \"type\": \"card\", \"data\": {\"card_name\": \"Oversight\", \"col\": 4}}, {\"id\": \"gp_setup\", \"type\": \"card\", \"data\": {\"card_name\": \"Setup\", \"col\": 4}}, {\"id\": \"gp_mast\", \"type\": \"card\", \"data\": {\"card_name\": \"Masters\", \"col\": 4}}]",
+ "content": "[{\"id\": \"gp_head\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Gate Pass</b></span>\", \"col\": 12}}, {\"id\": \"gp_cards\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Awaiting Receipt\", \"col\": 3}}, {\"id\": \"gp_cards2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Inside Now\", \"col\": 3}}, {\"id\": \"gp_cards3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Overdue Returns\", \"col\": 3}}, {\"id\": \"gp_cards4\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Compliance Pending\", \"col\": 3}}, {\"id\": \"gp_sc1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"gp_sh1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Today</b></span>\", \"col\": 12}}, {\"id\": \"gp_cards5\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"In Today\", \"col\": 3}}, {\"id\": \"gp_cards6\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Out Today\", \"col\": 3}}, {\"id\": \"gp_cards7\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Open Drafts\", \"col\": 3}}, {\"id\": \"gp_cards8\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"With Discrepancy\", \"col\": 3}}, {\"id\": \"gp_sc2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"gp_chart\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Gate Pass Volume\", \"col\": 12}}, {\"id\": \"gp_sc3\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"gp_ops\", \"type\": \"card\", \"data\": {\"card_name\": \"Gate Operations\", \"col\": 4}}, {\"id\": \"gp_rec\", \"type\": \"card\", \"data\": {\"card_name\": \"Reconciliation\", \"col\": 4}}, {\"id\": \"gp_ovr\", \"type\": \"card\", \"data\": {\"card_name\": \"Oversight\", \"col\": 4}}, {\"id\": \"gp_setup\", \"type\": \"card\", \"data\": {\"card_name\": \"Setup\", \"col\": 4}}, {\"id\": \"gp_mast\", \"type\": \"card\", \"data\": {\"card_name\": \"Masters\", \"col\": 4}}]",
  "creation": "2026-08-06 10:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace",
@@ -15,7 +15,7 @@
  "idx": 0,
  "indicator_color": "blue",
  "is_hidden": 0,
- "label": "Gate Pass",
+ "label": "Gate Pass Management",
  "links": [
   {
    "hidden": 0,
@@ -289,41 +289,41 @@
    "description": ""
   }
  ],
- "modified": "2026-08-06 10:00:00.000000",
+ "modified": "2026-08-07 13:00:00.000000",
  "modified_by": "Administrator",
  "module": "Gate Pass",
- "name": "Gate Pass",
+ "name": "Gate Pass Management",
  "number_cards": [
   {
-   "label": "Gate Pass Inside Now",
+   "label": "Inside Now",
    "number_card_name": "Gate Pass Inside Now"
   },
   {
-   "label": "Gate Pass Pending Receipt",
+   "label": "Awaiting Receipt",
    "number_card_name": "Gate Pass Pending Receipt"
   },
   {
-   "label": "Gate Pass Overdue Returns",
+   "label": "Overdue Returns",
    "number_card_name": "Gate Pass Overdue Returns"
   },
   {
-   "label": "Gate Pass Today In",
+   "label": "In Today",
    "number_card_name": "Gate Pass Today In"
   },
   {
-   "label": "Gate Pass Today Out",
+   "label": "Out Today",
    "number_card_name": "Gate Pass Today Out"
   },
   {
-   "label": "Gate Pass Compliance Pending",
+   "label": "Compliance Pending",
    "number_card_name": "Gate Pass Compliance Pending"
   },
   {
-   "label": "Gate Pass Open Drafts",
+   "label": "Open Drafts",
    "number_card_name": "Gate Pass Open Drafts"
   },
   {
-   "label": "Gate Pass Discrepancies",
+   "label": "With Discrepancy",
    "number_card_name": "Gate Pass Discrepancies"
   }
  ],
@@ -363,5 +363,5 @@
    "type": "DocType"
   }
  ],
- "title": "Gate Pass"
+ "title": "Gate Pass Management"
 }

@@ -325,14 +325,17 @@ def _refresh_processed(gp):
 		if r.link_type == "Target"
 		and frappe.db.get_value(r.reference_doctype, r.reference_name, "docstatus") != 2
 	)
+	from gatepass_management.gate_pass.doctype.gate_pass.gate_pass import (
+		compute_per_processed,
+		derive_status,
+	)
+
 	gp.db_set("processed_qty", total, update_modified=False)
 	gp.db_set(
 		"per_processed",
-		flt(total) / flt(gp.total_qty) * 100 if flt(gp.total_qty) else 0,
+		compute_per_processed(total, gp.total_accepted_qty),
 		update_modified=False,
 	)
-
-	from gatepass_management.gate_pass.doctype.gate_pass.gate_pass import derive_status
 
 	gp.reload()
 	gp.db_set("status", derive_status(gp), update_modified=False)

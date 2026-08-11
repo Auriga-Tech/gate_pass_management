@@ -307,7 +307,10 @@ def _remove_references(doc):
 
 
 def _sync_gate_pass(gate_pass: str):
-	from gatepass_management.gate_pass.doctype.gate_pass.gate_pass import derive_status
+	from gatepass_management.gate_pass.doctype.gate_pass.gate_pass import (
+		compute_per_processed,
+		derive_status,
+	)
 
 	gp = frappe.get_doc("Gate Pass", gate_pass)
 	total = 0.0
@@ -321,7 +324,7 @@ def _sync_gate_pass(gate_pass: str):
 	gp.db_set("processed_qty", total, update_modified=False)
 	gp.db_set(
 		"per_processed",
-		flt(total) / flt(gp.total_qty) * 100 if flt(gp.total_qty) else 0,
+		compute_per_processed(total, gp.total_accepted_qty),
 		update_modified=False,
 	)
 	gp.reload()

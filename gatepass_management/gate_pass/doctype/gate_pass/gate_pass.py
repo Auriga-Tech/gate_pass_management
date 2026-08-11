@@ -265,9 +265,7 @@ class GatePass(Document):
 		) else 0
 
 		self.processed_qty = sum(flt(r.qty) for r in self.references if r.link_type == "Target")
-		self.per_processed = (
-			flt(self.processed_qty) / flt(self.total_qty) * 100 if flt(self.total_qty) else 0
-		)
+		self.per_processed = compute_per_processed(self.processed_qty, self.total_accepted_qty)
 
 	def _compute_weights(self):
 		if self.gross_weight or self.tare_weight:
@@ -373,6 +371,26 @@ class GatePass(Document):
 
 
 # ===========================================================================
+# Shared computations — one definition, so the three call sites cannot drift.
+# ===========================================================================
+
+
+def compute_per_processed(processed_qty, accepted_qty) -> float:
+	"""Percentage of the gate pass that has reached a target document.
+
+	Measured against ACCEPTED quantity, not the gate-passed quantity. Only what
+	the gate physically took in can ever be received, so a pass with any
+	shortage or damage could never reach 100% if the denominator were the
+	paperwork figure — it would sit on the store manager's worklist for ever,
+	claiming work that does not exist.
+	"""
+	accepted = flt(accepted_qty)
+	if not accepted:
+		return 0.0
+	return flt(flt(processed_qty) / accepted * 100, 6)
+
+
+# ===========================================================================
 # Status derivation — pure function, unit tested against a table of inputs.
 # ===========================================================================
 
@@ -397,7 +415,9 @@ def derive_status(doc) -> str:
 		return "At Gate"
 
 	if not doc.is_returnable:
-		return "Completed" if flt(doc.per_processed) >= 100 or not doc.source_type else "Completed"
+		if doc.source_type and flt(doc.total_accepted_qty) and flt(doc.per_processed) < 100:
+			return "Partially Processed" if flt(doc.per_processed) > 0 else "Inside"
+		return "Completed"
 
 	returned = flt(doc.returned_qty)
 	total = flt(doc.total_qty)
