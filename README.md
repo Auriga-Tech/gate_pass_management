@@ -96,7 +96,7 @@ Three layers, each owning a different kind of decision.
 
 **Gate Pass Settings** — global policy. Which fields are mandatory, which features are on, naming, dating limits, permissions, notifications, and the rule table where every rule's action is set.
 
-**Gate Pass Source** — one record per flow, e.g. "Purchase Order — Inward". Defines the child table, quantity fields, pending formula, allowed statuses, permitted roles, quantity-edit policy, required documents, compliance checks, what target document it produces, and whether a draft is created automatically when the source is submitted.
+**Gate Pass Source** — one record per flow, e.g. "Purchase Order - Inward". Defines the child table, quantity fields, pending formula, allowed statuses, permitted roles, quantity-edit policy, required documents, compliance checks, what target document it produces, and whether a draft is created automatically when the source is submitted.
 
 **Rule overrides** — any flow can override a rule for itself. Block on over-quantity for purchase receipts while only warning on delivery notes, without touching anything else.
 

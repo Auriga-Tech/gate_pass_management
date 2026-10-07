@@ -333,10 +333,13 @@ def _sync_gate_pass(gate_pass: str):
 
 def _ignore_gate_pass_link(doc):
 	"""Keep Frappe's generic link check quiet so our own messages surface instead."""
-	if not isinstance(getattr(doc, "ignore_linked_doctypes", None), list):
-		doc.ignore_linked_doctypes = []
-	if "Gate Pass" not in doc.ignore_linked_doctypes:
-		doc.ignore_linked_doctypes.append("Gate Pass")
+	# ERPNext sets this as a tuple (GL Entry, Stock Ledger Entry, ...) in its own
+	# on_cancel. Keep whatever is already there and add ours; replacing it would make
+	# Frappe's link check fail on the document's own ledger entries.
+	ignored = list(getattr(doc, "ignore_linked_doctypes", None) or [])
+	if "Gate Pass" not in ignored:
+		ignored.append("Gate Pass")
+	doc.ignore_linked_doctypes = ignored
 
 
 def _party_of(doc) -> tuple[str | None, str | None]:

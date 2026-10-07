@@ -203,20 +203,33 @@ def _apply_qty(item, gp_row):
 	"""Push the gate's physical count into the target.
 
 	`accepted_qty` — what actually came in — not `qty`, which is what the
-	paperwork claimed. Damage becomes rejected qty where the target supports it,
-	so the receipt reflects reality without a second data-entry step.
+	paperwork claimed. Shortage, damage and rejection at the gate together become
+	the receipt's Rejected Qty, held in its Rejected Warehouse, so the receipt
+	accounts for the whole consignment without a second data-entry step:
+
+	    Accepted Qty  = gate Accepted
+	    Rejected Qty  = Shortage + Damaged + Rejected at Gate
+	    Received Qty  = Accepted + Rejected Qty   (= the gate Qty)
 	"""
 	accepted = flt(gp_row.accepted_qty)
+	rejected = flt(gp_row.shortage_qty) + flt(gp_row.damaged_qty) + flt(gp_row.rejected_qty)
 	item.qty = accepted
 
 	if item.meta.has_field("received_qty"):
-		item.received_qty = accepted + flt(gp_row.damaged_qty)
+		item.received_qty = accepted + rejected
 	if item.meta.has_field("rejected_qty"):
-		item.rejected_qty = flt(gp_row.damaged_qty)
-		if flt(gp_row.damaged_qty) and item.meta.has_field("rejected_warehouse"):
+		item.rejected_qty = rejected
+		if rejected and item.meta.has_field("rejected_warehouse"):
 			item.rejected_warehouse = gp_row.rejected_warehouse or frappe.db.get_single_value(
 				"Gate Pass Settings", "default_rejected_warehouse"
 			)
+			if not item.rejected_warehouse:
+				frappe.throw(
+					_("Row {0} ({1}) has {2} short, damaged or rejected but no Rejected Warehouse. "
+					  "Set a Default Rejected Warehouse in Gate Pass Settings, then create the "
+					  "receipt again.").format(gp_row.idx, gp_row.item_code, rejected),
+					title=_("Rejected Warehouse missing"),
+				)
 	if item.meta.has_field("amount"):
 		item.amount = accepted * flt(item.get("rate"))
 	if gp_row.bom and item.meta.has_field("bom"):

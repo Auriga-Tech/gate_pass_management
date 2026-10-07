@@ -31,6 +31,7 @@
   "cb_party",
   "allow_gate_pass_without_items",
   "allow_non_stock_items",
+  "allow_add_item_rows",
   "sb_required",
   "require_location",
   "require_gate",
@@ -268,6 +269,13 @@
    "label": "Allow Free-Text Items",
    "default": "1",
    "description": "Lets the gate record tools, documents, scrap and samples that have no Item master."
+  },
+  {
+   "default": "0",
+   "description": "Off: draft gate passes have no Add Row button, so items can only be added with Get Items From. On: the button shows on draft gate passes.",
+   "fieldname": "allow_add_item_rows",
+   "fieldtype": "Check",
+   "label": "Allow Add Row in Gate Pass Items"
   },
   {
    "fieldname": "sb_required",

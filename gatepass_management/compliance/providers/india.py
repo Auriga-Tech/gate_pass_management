@@ -194,42 +194,41 @@ class IndiaComplianceProvider(ComplianceProvider):
 			return None
 
 	def _e_waybill_threshold(self, source_doc) -> float:
-		"""Threshold for the supplying state, from india_compliance's own master.
+		"""Threshold from india_compliance's own GST Settings.
 
-		Never hard-coded: the limit changes and varies by state.
+		Never hard-coded: the limit changes. GST Settings holds one national limit
+		(`e_waybill_threshold`) and a table of state-wise limits that apply only to
+		movement within a state (`e_waybill_threshold_for_intrastate`).
 		"""
 		settings = self._gst_settings()
 		if not settings:
 			return 0.0
 
-		state = None
-		for fieldname in ("company_gstin", "billing_address_gstin"):
-			gstin = source_doc.get(fieldname)
-			if gstin:
-				try:
-					state = frappe.db.get_value("GSTIN", gstin, "gstin_state") or None
-				except Exception:
-					state = None
-				if state:
-					break
+		threshold = flt(settings.get("e_waybill_threshold"))
 
-		rows = settings.get("e_waybill_threshold") or []
-		if rows:
-			for row in rows:
-				if state and row.get("state") == state:
-					return flt(row.get("threshold"))
-			for row in rows:
-				if not row.get("state"):
-					return flt(row.get("threshold"))
+		company_gstin = source_doc.get("company_gstin") or ""
+		party_gstin = source_doc.get("billing_address_gstin") or ""
+		intrastate = bool(company_gstin and party_gstin and company_gstin[:2] == party_gstin[:2])
+		if not intrastate:
+			return threshold
 
-		return flt(settings.get("e_waybill_threshold_amount") or 0)
+		try:
+			state = frappe.db.get_value("GSTIN", company_gstin, "gstin_state") or None
+		except Exception:
+			state = None
+
+		for row in settings.get("e_waybill_threshold_for_intrastate") or []:
+			if state and row.get("state") == state and row.get("intrastate_applicable"):
+				return flt(row.get("intrastate_threshold"))
+
+		return threshold
 
 	def _contact(self, source_doc, action: str) -> str:
 		owner = source_doc.get("owner")
 		who = frappe.utils.get_fullname(owner) if owner else None
 		if who:
 			return _("Ask {0} (who created {1}) to {2}.").format(
-				frappe.bold(who), source_doc.name, action
+				frappe.bold(frappe.utils.escape_html(who)), source_doc.name, action
 			)
 		return _("Ask the team that created {0} to {1}.").format(source_doc.name, action)
 

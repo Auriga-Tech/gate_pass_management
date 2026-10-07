@@ -36,9 +36,11 @@ class GatePass(Document):
 		self._derive_direction()
 		self._resolve_party()
 		self._apply_qty_policy()
+		self._fill_item_names()
 		self._compute_row_values()
 		self._compute_totals()
 		self._compute_weights()
+		self._default_return_date()
 		self._refresh_compliance()
 		self._set_status()
 		self.run_rules()
@@ -55,6 +57,9 @@ class GatePass(Document):
 		self._log("Entered" if self.direction == "In" else "Exited")
 		self._set_status()
 		self.db_set("status", self.status, update_modified=False)
+		if self.direction == "Out" and self.is_returnable:
+			self.db_set("return_status", derive_return_status(self), update_modified=False)
+		self._sync_returnable_origin()
 		self._create_auto_target()
 
 	def before_cancel(self):
@@ -64,6 +69,7 @@ class GatePass(Document):
 		self.flags.ignore_links = True
 		self.status = "Cancelled"
 		self._log("Cancelled")
+		self._sync_returnable_origin()
 
 	def on_update_after_submit(self):
 		self._compute_totals()
@@ -186,6 +192,12 @@ class GatePass(Document):
 			self._source_config = frappe.get_cached_doc("Gate Pass Source", self.source_type)
 		return self._source_config
 
+	def _fill_item_names(self):
+		"""An item picked by code always carries its name, however the row was added."""
+		for row in self.items:
+			if row.item_code and not row.item_name:
+				row.item_name = frappe.get_cached_value("Item", row.item_code, "item_name")
+
 	def _derive_direction(self):
 		"""Direction follows the source flow.
 
@@ -198,14 +210,25 @@ class GatePass(Document):
 			self.source_doctype = config.source_doctype
 			self.source_sub_type = config.sub_type
 
-		documents = {r.source_document for r in self.items if r.source_document}
+		documents = list(dict.fromkeys(r.source_document for r in self.items if r.source_document))
 		self.is_multi_source = 1 if len(documents) > 1 else 0
-		if len(documents) == 1:
-			self.source_document = next(iter(documents))
-		elif not documents:
-			self.source_document = None
+		# With several documents the header names the first; the items carry each row's own.
+		self.source_document = documents[0] if documents else None
 
 	def _resolve_party(self):
+		allowed = allowed_party_types()
+		if self.party_type and self.party_type not in allowed:
+			frappe.throw(
+				_("Party Type must be one of: {0}.").format(", ".join(_(t) for t in allowed)),
+				title=_("Invalid Party Type"),
+			)
+		if self.party and not self.party_type:
+			frappe.throw(_("Select a Party Type before choosing a Party."))
+		if self.party_type and self.party and not frappe.db.exists(self.party_type, self.party):
+			frappe.throw(_("{0} {1} does not exist.").format(_(self.party_type), self.party))
+		if not self.party:
+			self.party_name = None
+
 		if self.party_type and self.party:
 			meta = frappe.get_meta(self.party_type)
 			for fieldname in (f"{frappe.scrub(self.party_type)}_name", "full_name", "name"):
@@ -298,6 +321,55 @@ class GatePass(Document):
 
 	def _set_status(self):
 		self.status = derive_status(self)
+
+	def _default_return_date(self):
+		"""A returnable pass with no date can never become overdue, so fill it in."""
+		if self.direction != "Out" or not self.is_returnable or self.expected_return_date:
+			return
+		days = cint(guards.get_settings().default_return_days)
+		if days > 0:
+			self.expected_return_date = add_days(self.posting_date or today(), days)
+
+	def _sync_returnable_origin(self):
+		"""Keep an outward pass's return tracking in step with its return legs.
+
+		A return leg is a gate pass whose source is the outward pass. Submitting or
+		cancelling one recomputes what has come back, so the original reaches
+		Partially Returned, Returned, or Closed without anyone updating it by hand.
+		"""
+		if self.source_doctype != "Gate Pass" or not self.source_document:
+			return
+		origin = frappe.get_doc("Gate Pass", self.source_document)
+		if origin.docstatus != 1 or not origin.is_returnable:
+			return
+
+		returned, last_date = frappe.db.sql(
+			"""
+			SELECT COALESCE(SUM(gpi.qty), 0), MAX(gp.posting_date)
+			FROM `tabGate Pass Item` gpi
+			JOIN `tabGate Pass` gp ON gp.name = gpi.parent
+			WHERE gp.docstatus = 1 AND gpi.source_doctype = 'Gate Pass'
+			  AND gpi.source_document = %s
+			""",
+			origin.name,
+		)[0]
+
+		origin.returned_qty = flt(returned)
+		origin.return_status = derive_return_status(origin)
+		origin.actual_return_date = last_date if origin.return_status == "Returned" else None
+		origin.status = derive_status(origin)
+		origin.db_set(
+			{
+				"returned_qty": origin.returned_qty,
+				"return_status": origin.return_status,
+				"actual_return_date": origin.actual_return_date,
+				"status": origin.status,
+			},
+			update_modified=False,
+		)
+		origin._log("Return Recorded", message=_("{0} of {1} returned.").format(
+			origin.returned_qty, flt(origin.total_qty)
+		))
 
 	# ----------------------------------------------------------------- rules
 
@@ -395,6 +467,24 @@ def compute_per_processed(processed_qty, accepted_qty) -> float:
 # ===========================================================================
 
 
+def allowed_party_types() -> list[str]:
+	"""Party types a gate pass may carry, from Gate Pass Settings; Customer and Supplier if unset."""
+	settings = guards.get_settings()
+	types = [r.party_type for r in settings.get("allowed_party_types") or [] if r.party_type]
+	return types or ["Customer", "Supplier"]
+
+
+def derive_return_status(doc) -> str:
+	returned, total = flt(doc.returned_qty), flt(doc.total_qty)
+	if total and returned >= total:
+		return "Returned"
+	if returned > 0:
+		return "Partially Returned"
+	if doc.expected_return_date and getdate(doc.expected_return_date) < getdate(today()):
+		return "Overdue"
+	return "Pending"
+
+
 def derive_status(doc) -> str:
 	if doc.docstatus == 2:
 		return "Cancelled"
@@ -423,6 +513,8 @@ def derive_status(doc) -> str:
 	total = flt(doc.total_qty)
 
 	if returned >= total and total:
+		if frappe.get_cached_value("Gate Pass Settings", None, "auto_close_on_full_return"):
+			return "Closed"
 		return "Returned"
 	if returned > 0:
 		return "Partially Returned"

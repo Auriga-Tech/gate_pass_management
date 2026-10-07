@@ -17,3 +17,92 @@
 .gp-compliance-msg { color: var(--text-muted); font-size: var(--text-sm); }
 .gp-compliance-fix { color: var(--text-color); font-size: var(--text-sm); margin-top: 3px; }
 .gp-compliance-no { font-family: var(--font-stack-mono); font-size: var(--text-sm); }
+
+/* Source Document card: values fetched from the source, shown read only. */
+.gp-src {
+	border: 1px solid var(--border-color); border-radius: var(--border-radius-md);
+	background: var(--subtle-fg, var(--control-bg)); overflow: hidden;
+}
+.gp-src-head {
+	display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+	padding: 10px 14px; border-bottom: 1px solid var(--border-color);
+	background: var(--fg-color);
+}
+.gp-src-badge {
+	font-size: var(--text-xs); font-weight: 600; letter-spacing: .03em; text-transform: uppercase;
+	padding: 2px 8px; border-radius: 999px;
+	color: var(--blue-600); background: var(--blue-50);
+}
+.gp-src-badge[data-dir="Out"] { color: var(--orange-600); background: var(--orange-50); }
+.gp-src-flow { font-weight: 600; color: var(--text-color); }
+.gp-src-pill {
+	font-size: var(--text-xs); padding: 2px 8px; border-radius: 999px;
+	color: var(--yellow-700, var(--text-color)); background: var(--yellow-50, var(--control-bg));
+}
+.gp-src-lock { margin-left: auto; font-size: var(--text-xs); }
+.gp-src-grid {
+	display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px 20px;
+	padding: 14px;
+}
+.gp-src-label {
+	font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em;
+	margin-bottom: 2px;
+}
+.gp-src-value { font-weight: 500; color: var(--text-color); word-break: break-word; }
+.gp-src-value a { font-weight: 600; }
+.gp-src-docs { display: flex; flex-wrap: wrap; gap: 6px; }
+.gp-src-doc {
+	display: inline-flex; align-items: center; gap: 2px; padding: 2px 4px 2px 10px;
+	border: 1px solid var(--border-color); border-radius: 999px; background: var(--control-bg);
+}
+.gp-src-x {
+	display: inline-flex; align-items: center; justify-content: center;
+	width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%;
+	background: transparent; color: var(--text-muted); font-size: 16px; line-height: 1; cursor: pointer;
+}
+.gp-src-x:hover, .gp-src-x:focus-visible { background: var(--red-100, #fde8e8); color: var(--red-600, #c0392b); outline: none; }
+.gp-src-mono { font-family: var(--font-stack-mono); font-size: var(--text-sm); }
+
+/* Get Items From picker. */
+.gp-pick { display: flex; flex-direction: column; gap: 16px; max-height: 52vh; overflow-y: auto; padding-right: 2px; }
+.gp-pick-title {
+	display: flex; align-items: center; gap: 8px; grid-column: 1 / -1;
+	font-size: var(--text-xs); font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+	color: var(--text-muted);
+}
+.gp-pick-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 575px) { .gp-pick-group { grid-template-columns: 1fr; } }
+.gp-pick-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue-500); }
+.gp-pick-group[data-dir="Out"] .gp-pick-dot { background: var(--orange-500); }
+.gp-pick-item {
+	display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;
+	text-align: left; margin: 0; padding: 9px 12px; cursor: pointer;
+	border: 1px solid var(--border-color); border-radius: var(--border-radius-md);
+	background: var(--fg-color); color: var(--text-color);
+	transition: border-color .12s ease, background-color .12s ease, box-shadow .12s ease;
+}
+.gp-pick-item:hover, .gp-pick-item:focus-visible {
+	border-color: var(--primary-color, var(--blue-500)); background: var(--control-bg);
+	box-shadow: var(--shadow-sm); outline: none;
+}
+.gp-pick-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.gp-pick-name { font-weight: 600; font-size: var(--text-md); line-height: 1.3; }
+.gp-pick-desc {
+	font-size: var(--text-sm); color: var(--text-muted);
+	white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gp-pick-go { color: var(--text-muted); flex-shrink: 0; }
+.gp-pick-item:hover .gp-pick-go { color: var(--primary-color, var(--blue-500)); }
+.gp-pick-empty { padding: 24px 0; text-align: center; }
+.gp-picker-dialog .modal-body { padding-top: 14px; }
+.gp-picker-dialog [data-fieldname="search"] .clearfix { display: none; }
+.gp-picker-dialog [data-fieldname="search"] { margin-bottom: 14px; }
+
+/* Form polish. */
+/* Frappe sets an inline height (300px Text, 150px Small Text) on these textareas,
+   so a plain rule is ignored; !important is needed. */
+[data-doctype="Gate Pass"] [data-fieldname="remarks"] textarea,
+[data-doctype="Gate Pass"] [data-fieldname="inspection_remarks"] textarea {
+	min-height: 72px !important; height: 72px !important; resize: vertical;
+}
+[data-doctype="Gate Pass"] .form-section .section-head { font-weight: 600; }

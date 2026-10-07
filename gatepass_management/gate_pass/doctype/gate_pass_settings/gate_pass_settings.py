@@ -11,12 +11,34 @@ from gatepass_management.rules import catalogue
 
 class GatePassSettings(Document):
 	def validate(self):
+		self._apply_preset()
 		self._validate_field_rules()
 		self._validate_tracking_template()
 		self._apply_naming_series()
 
 	def on_update(self):
 		frappe.clear_cache(doctype="Gate Pass")
+
+	def _apply_preset(self):
+		"""Push the chosen preset onto the rule rows.
+
+		The engine reads each row's own action before it looks at the preset, so
+		without this a preset change would be recorded but never take effect.
+		Custom leaves the rows as the administrator set them.
+		"""
+		preset = self.enforcement_preset
+		if not preset or preset == catalogue.PRESET_CUSTOM:
+			return
+		if not self.is_new() and not self.has_value_changed("enforcement_preset"):
+			return
+		for row in self.rules or []:
+			try:
+				rule = catalogue.get(row.rule_code)
+			except KeyError:
+				continue
+			action = catalogue.preset_action(rule, preset)
+			if action in ("Block", "Warn", "Ignore"):
+				row.action = action
 
 	def _validate_field_rules(self):
 		"""Catch a typo at configuration time rather than at 2 a.m. at the gate."""

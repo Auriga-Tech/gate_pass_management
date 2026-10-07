@@ -152,7 +152,7 @@ _DOCUMENT_RULES = [
 ]
 
 _PARTY_RULES = [
-	_r("PARTY-ADDRESS", "Address required for this party type", CAT_PARTY, "", WARN,
+	_r("PARTY-ADDRESS", "Address required for this party type", CAT_PARTY, "", IGNORE,
 	   source_overridable=True),
 	_r("PARTY-SOURCE-MATCH", "Gate pass party matches the source document", CAT_PARTY, "",
 	   BLOCK, source_overridable=True),
@@ -197,7 +197,7 @@ _QUANTITY_RULES = [
 
 _DISCREPANCY_RULES = [
 	_r("DISC-NOTES", "Notes required when a discrepancy exists", CAT_DISCREPANCY, "",
-	   WARN, source_overridable=True),
+	   IGNORE, source_overridable=True),
 	_r("DISC-REASON", "Reason required on each discrepancy row", CAT_DISCREPANCY, "",
 	   WARN, source_overridable=True),
 	_r("DISC-REJ-WAREHOUSE", "Rejected warehouse set when damage is recorded", CAT_DISCREPANCY,

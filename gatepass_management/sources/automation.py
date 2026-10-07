@@ -189,6 +189,13 @@ def _resolve_party(config, doc) -> tuple[str | None, str | None]:
 			value = frappe.db.get_value(link_doctype, link_value, target_field)
 			party_type = frappe.get_meta(link_doctype).get_field(target_field).options
 			return party_type, value
+		# The source row may hold the party type itself (a Dynamic Link, as on a
+		# Gate Pass) or imply it (a Link to Supplier or Customer).
+		df = frappe.get_meta(doc.doctype).get_field(field)
+		if df and df.fieldtype == "Dynamic Link":
+			return doc.get(df.options), doc.get(field)
+		if df and df.fieldtype == "Link":
+			return df.options, doc.get(field)
 		return None, doc.get(field)
 
 	return config.party_type, doc.get(config.party_field) if config.party_field else None

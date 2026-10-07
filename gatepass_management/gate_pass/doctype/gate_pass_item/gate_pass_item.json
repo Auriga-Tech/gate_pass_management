@@ -60,6 +60,7 @@
    "search_index": 1
   },
   {
+   "fetch_from": "item_code.item_name",
    "fieldname": "item_name",
    "fieldtype": "Data",
    "label": "Item Name",
@@ -161,6 +162,7 @@
    "description": "What is actually taken in or released. This is the number that flows to the target document — not Qty."
   },
   {
+   "description": "Goes to Rejected Qty, in the Rejected Warehouse, on the target receipt.",
    "fieldname": "shortage_qty",
    "fieldtype": "Float",
    "label": "Shortage",
@@ -175,9 +177,10 @@
    "fieldtype": "Float",
    "label": "Damaged",
    "non_negative": 1,
-   "description": "Maps to Rejected Qty on the target receipt."
+   "description": "Goes to Rejected Qty, in the Rejected Warehouse, on the target receipt."
   },
   {
+   "description": "Goes to Rejected Qty, in the Rejected Warehouse, on the target receipt.",
    "fieldname": "rejected_qty",
    "fieldtype": "Float",
    "label": "Rejected at Gate",

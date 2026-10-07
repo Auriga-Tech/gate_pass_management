@@ -58,9 +58,9 @@ Click **Get Items From** and pick what matches the paperwork the driver handed y
 | The driver has… | Choose |
 |---|---|
 | A supplier's invoice or challan against your purchase order | **Purchase Order** |
-| Finished goods from a job worker | **Subcontracting Order (Finished Goods)** |
-| Material coming back from another of your plants | **Stock Entry (Incoming Transfer)** |
-| Material coming back with no paperwork raised yet | **Return Against an Outbound Transfer** |
+| Finished goods from a job worker | **Subcontract Order (Finished Goods)** |
+| Material coming back from another of your plants | **Stock Entry (Transfer In)** |
+| Material coming back with no paperwork raised yet | **Return of Transfer** |
 
 > **You do not choose "In" or "Out".** The system works that out from the document you picked. If you picked a purchase order, it knows material is coming in.
 
@@ -133,7 +133,7 @@ Some messages are **warnings** in orange. Those record the issue and let you car
 
 Same process, with one important addition.
 
-Use **Get Items From** and choose **Sales Invoice**, **Delivery Note**, **Stock Entry (Send to Subcontractor)**, or one of the return options.
+Use **Get Items From** and choose **Sales Invoice**, **Delivery Note**, **Stock Entry (Subcontract)**, or one of the return options.
 
 ### The compliance check — read this carefully
 
@@ -182,7 +182,7 @@ The system tracks it. If it does not come back by the expected date, it is flagg
 ### When it comes back
 
 1. Create a new gate pass.
-2. **Get Items From → Returning Gate Pass (Out)**.
+2. **Get Items From → Returnable Gate Pass**.
 3. Pick the original outward pass.
 4. Confirm what actually came back — record shortage or damage if some did not.
 5. Submit.
@@ -442,8 +442,8 @@ you have enabled puts one entry there:
 
 ```
 Get Items From ▸  Purchase Order
-                  Subcontracting Order (Finished Goods)
-                  Stock Entry (Send to Subcontractor)
+                  Subcontract Order (Finished Goods)
+                  Stock Entry (Subcontract)
                   Sales Invoice
                   Delivery Note
                   ...
@@ -604,7 +604,7 @@ Resolution: **global preset → per-rule → per-flow override → bypass role**
 You want over-quantity blocked for inward receipts, warned for outward deliveries, and bypassed by the plant manager:
 
 1. Settings → Rules → `QTY-LEDGER` → Action **Block**, Bypass Roles **Gate Pass Manager**.
-2. Gate Pass Source "Delivery Note — Dispatch" → Rule Overrides → `QTY-LEDGER` → **Warn**.
+2. Gate Pass Source "Delivery Note - Dispatch" → Rule Overrides → `QTY-LEDGER` → **Warn**.
 
 A guard on a purchase order is blocked. The plant manager is warned and must give a reason. Delivery notes never block.
 
@@ -669,7 +669,7 @@ Include: the gate pass number, the exact error text, the trace ID, what you were
 | **Advisory mode** | Preset where rules warn but do not block. The shipped default. |
 | **Consumption ledger** | How the app tracks what has already been gate passed against each order line. |
 | **Direction** | In or Out. Derived from the source flow. |
-| **Gate Pass Source** | A configured flow, e.g. "Purchase Order — Inward". |
+| **Gate Pass Source** | A configured flow, e.g. "Purchase Order - Inward". |
 | **Pending Qty** | Still expected: ordered minus already received or gate passed. |
 | **Source Row** | The exact order line a gate pass row draws on. |
 | **Target document** | What a gate pass produces — a receipt, transfer or delivery note. |

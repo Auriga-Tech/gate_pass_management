@@ -396,7 +396,7 @@ Unconditional rules are materialised as **Property Setters** on `Settings.on_upd
 
 | Fieldname | Type | Purpose |
 |---|---|---|
-| `source_name` | Data (name) | e.g. "Purchase Order — Inward" |
+| `source_name` | Data (name) | e.g. "Purchase Order - Inward" |
 | `enabled` | Check | |
 | `direction` | Select `In`/`Out` | Which direction this source appears under |
 | `source_doctype` | Link → DocType | |
@@ -448,7 +448,7 @@ Unconditional rules are materialised as **Property Setters** on `Settings.on_upd
 | 1 | Purchase Order | In | Editable | The core inbound flow |
 | 2 | Subcontracting Order (Finished Goods) | In | Editable | |
 | 3 | Subcontracting Order (RM Return) | Out | Editable | |
-| 4 | Stock Entry — Send to Subcontractor | Out | Locked to Source | `auto_create_draft` on |
+| 4 | Stock Entry - Send to Subcontractor | Out | Locked to Source | `auto_create_draft` on |
 | 5 | Stock Entry — Material Transfer (transit out) | Out | Locked to Source | `auto_create_draft` on |
 | 6 | Stock Entry — return (transit in) | In | Prefilled, Editable | Direction auto-derived |
 | 7 | **Stock Entry — outbound reference, manual return** | In | Editable | **Material comes back before any return Stock Entry exists.** The guard references the *original outbound* Stock Entry and enters quantities by hand. Common and, until now, missing from the plan. |

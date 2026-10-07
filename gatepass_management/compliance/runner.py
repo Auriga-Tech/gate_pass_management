@@ -122,6 +122,14 @@ def sync_to_gate_pass(gate_pass, results: list[ComplianceResult]):
 	gate_pass.compliance_status = roll_up(results)
 	gate_pass.compliance_checked_on = now_datetime()
 
+	# Record the e-way bill number from the source document. Stored only; nothing
+	# here checks it, and a number typed by the operator is never overwritten.
+	if not gate_pass.get("eway_bill_no"):
+		for r in results:
+			if r.check_code == "IN_E_WAY_BILL" and r.document_no:
+				gate_pass.eway_bill_no = r.document_no
+				break
+
 
 def roll_up(results: list[ComplianceResult]) -> str:
 	if not results:

@@ -35,6 +35,7 @@ def run(doc, ctx, at_submit: bool = False):
 
 	if at_submit:
 		_ledger_under_lock(doc, ctx)
+		_required_fields(doc, ctx)
 		_checklist(doc, ctx)
 		_charges(doc, ctx)
 		_inspection(doc, ctx)
@@ -397,9 +398,10 @@ def _discrepancy(doc, ctx):
 			          fieldname="discrepancy_reason")
 
 			ctx.check("DISC-REJ-WAREHOUSE",
-			          flt(row.damaged_qty) > 0 and not row.rejected_warehouse
+			          parts > 0 and not row.rejected_warehouse
 			          and bool(config and config.target_doctype),
-			          _("Set a Rejected Warehouse so damaged qty can be received separately."),
+			          _("Set a Rejected Warehouse so the shortage, damaged and rejected qty "
+			            "can be held separately on the receipt."),
 			          row_idx=idx, fieldname="rejected_warehouse")
 
 		total = flt(row.accepted_qty) + parts
@@ -462,6 +464,24 @@ def _field_rules(doc, ctx):
 					ctx, action, not row.get(rule.fieldname), label,
 					fieldname=rule.fieldname, row_idx=row.idx,
 				)
+
+
+# Gate Pass Settings > Required Fields. Checked at submit, not on save, so the
+# draft created automatically from a Purchase Order can exist before the vehicle arrives.
+_REQUIRED_BY_SETTING = {
+	"require_location": ("location", "Location"),
+	"require_gate": ("gate", "Gate"),
+	"require_vehicle": ("vehicle_number", "Vehicle Number"),
+	"require_driver": ("driver_name", "Driver Name"),
+	"require_reference_no": ("reference_no", "Reference No"),
+}
+
+
+def _required_fields(doc, ctx):
+	settings = guards.get_settings()
+	for setting, (fieldname, label) in _REQUIRED_BY_SETTING.items():
+		if settings.get(setting) and not (doc.get(fieldname) or "").strip():
+			_field_rule_check(ctx, "Block", True, _(label), fieldname=fieldname)
 
 
 def _field_rule_check(ctx, action, violated, label, **kw):
@@ -605,6 +625,13 @@ def _compliance(doc, ctx):
 			continue
 
 		violated_message = _("{0}: {1}").format(frappe.bold(result.label), result.message)
+
+		# A manager's recorded override (who and why, set by api.override_compliance)
+		# turns the block into a warning. The override stays on the pass and in the
+		# Compliance Exceptions report, so it is permanent and attributable.
+		if doc.compliance_override_by and (doc.compliance_override_reason or "").strip():
+			ctx.warnings.append(_violation(code, "Warn", violated_message, result.remediation))
+			continue
 
 		if rule.action == "Warn" and not _has_bypass(rule):
 			ctx.warnings.append(_violation(code, "Warn", violated_message, result.remediation))
