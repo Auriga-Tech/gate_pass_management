@@ -57,7 +57,8 @@
    "options": "Item",
    "in_list_view": 1,
    "columns": 2,
-   "search_index": 1
+   "search_index": 1,
+   "read_only": 1
   },
   {
    "fetch_from": "item_code.item_name",
@@ -65,18 +66,21 @@
    "fieldtype": "Data",
    "label": "Item Name",
    "in_list_view": 1,
-   "columns": 2
+   "columns": 2,
+   "read_only": 1
   },
   {
    "fieldname": "is_non_stock",
    "fieldtype": "Check",
    "label": "Free Text Item",
-   "description": "For tools, documents, scrap and samples that have no Item master."
+   "description": "For tools, documents, scrap and samples that have no Item master.",
+   "read_only": 1
   },
   {
    "fieldname": "description",
    "fieldtype": "Small Text",
-   "label": "Description"
+   "label": "Description",
+   "read_only": 1
   },
   {
    "fieldname": "sb_qty",
@@ -126,13 +130,15 @@
    "options": "UOM",
    "reqd": 1,
    "in_list_view": 1,
-   "columns": 1
+   "columns": 1,
+   "read_only": 1
   },
   {
    "fieldname": "conversion_factor",
    "fieldtype": "Float",
    "label": "Conversion Factor",
-   "default": "1"
+   "default": "1",
+   "read_only": 1
   },
   {
    "fieldname": "stock_uom",
@@ -166,7 +172,8 @@
    "fieldname": "shortage_qty",
    "fieldtype": "Float",
    "label": "Shortage",
-   "non_negative": 1
+   "non_negative": 1,
+   "read_only": 1
   },
   {
    "fieldname": "cb_disc",
@@ -194,7 +201,8 @@
    "fieldname": "discrepancy_reason",
    "fieldtype": "Link",
    "label": "Discrepancy Reason",
-   "options": "Gate Pass Discrepancy Reason"
+   "options": "Gate Pass Discrepancy Reason",
+   "read_only": 1
   },
   {
    "fieldname": "cb_disc2",
@@ -204,7 +212,8 @@
    "fieldname": "rejected_warehouse",
    "fieldtype": "Link",
    "label": "Rejected Warehouse",
-   "options": "Warehouse"
+   "options": "Warehouse",
+   "read_only": 1
   },
   {
    "fieldname": "sb_stock",
@@ -224,12 +233,14 @@
    "fieldname": "bom",
    "fieldtype": "Link",
    "label": "BOM",
-   "options": "BOM"
+   "options": "BOM",
+   "read_only": 1
   },
   {
    "fieldname": "packages",
    "fieldtype": "Int",
-   "label": "Packages"
+   "label": "Packages",
+   "read_only": 1
   },
   {
    "fieldname": "cb_stock",
@@ -239,12 +250,14 @@
    "fieldname": "batch_no",
    "fieldtype": "Link",
    "label": "Batch",
-   "options": "Batch"
+   "options": "Batch",
+   "read_only": 1
   },
   {
    "fieldname": "serial_no",
    "fieldtype": "Small Text",
-   "label": "Serial Numbers"
+   "label": "Serial Numbers",
+   "read_only": 1
   },
   {
    "fieldname": "sb_value",
@@ -255,7 +268,8 @@
   {
    "fieldname": "rate",
    "fieldtype": "Currency",
-   "label": "Rate"
+   "label": "Rate",
+   "read_only": 1
   },
   {
    "fieldname": "cb_value",
@@ -314,7 +328,8 @@
   {
    "fieldname": "remarks",
    "fieldtype": "Small Text",
-   "label": "Remarks"
+   "label": "Remarks",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,

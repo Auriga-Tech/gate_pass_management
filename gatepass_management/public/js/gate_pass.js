@@ -280,6 +280,12 @@ frappe.ui.form.on("Gate Pass", {
 frappe.ui.form.on("Gate Pass Item", {
 	qty(frm, cdt, cdn) { gatepass.balance_row(frm, cdt, cdn); },
 	shortage_qty(frm, cdt, cdn) { gatepass.balance_row(frm, cdt, cdn); },
+	// Shortage is not editable; it is whatever is left once accepted, damaged and rejected are set.
+	accepted_qty(frm, cdt, cdn) {
+		const row = locals[cdt][cdn];
+		const shortage = Math.max(0, flt(row.qty) - flt(row.accepted_qty) - flt(row.damaged_qty) - flt(row.rejected_qty));
+		if (flt(row.shortage_qty) !== shortage) frappe.model.set_value(cdt, cdn, "shortage_qty", shortage);
+	},
 	damaged_qty(frm, cdt, cdn) { gatepass.balance_row(frm, cdt, cdn); },
 	rejected_qty(frm, cdt, cdn) { gatepass.balance_row(frm, cdt, cdn); },
 	rate(frm, cdt, cdn) {

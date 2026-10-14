@@ -245,13 +245,19 @@ class RuleContext:
 					"values": v.values,
 				},
 			)
-			if self.doc.get("name") and not self.doc.get("__islocal"):
+			# The document being checked is a Gate Pass, or a target (receipt, etc.) that points
+			# at one. A target's own name is not a Gate Pass, so log against the one it links to.
+			is_gate_pass = self.doc.doctype == "Gate Pass"
+			gate_pass = self.doc.get("name") if is_gate_pass else self.doc.get("gate_pass")
+			if gate_pass and self.doc.get("name") and not self.doc.get("__islocal"):
 				log_event(
-					gate_pass=self.doc.name,
+					gate_pass=gate_pass,
 					event="Rule Warned",
 					message=v.message,
 					rule_code=v.code,
 					values=v.values,
+					reference_doctype=None if is_gate_pass else self.doc.doctype,
+					reference_name=None if is_gate_pass else self.doc.name,
 				)
 
 		body = "".join(f"<li>{self._format_one(v)}</li>" for v in self.warnings)

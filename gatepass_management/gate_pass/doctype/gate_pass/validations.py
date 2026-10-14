@@ -33,13 +33,24 @@ def run(doc, ctx, at_submit: bool = False):
 	_discrepancy(doc, ctx)
 	_field_rules(doc, ctx)
 
-	if at_submit:
-		_ledger_under_lock(doc, ctx)
-		_required_fields(doc, ctx)
-		_checklist(doc, ctx)
-		_charges(doc, ctx)
-		_inspection(doc, ctx)
-		_compliance(doc, ctx)
+	# These used to run only at submit. They run on save too, so their warnings are shown
+	# once, while the operator can still act on them. A draft is allowed to be incomplete,
+	# so on save they never block; at submit they do, as the rule's action says.
+	blocking_before = len(ctx.violations)
+	_ledger(doc, ctx, lock=at_submit)
+	_checklist(doc, ctx)
+	_charges(doc, ctx)
+	_inspection(doc, ctx)
+
+	if not at_submit:
+		del ctx.violations[blocking_before:]
+		return
+
+	# Every warning raised above was already shown when the Gate Pass was saved. Blocking
+	# problems stay in ctx.violations; only the repeat is dropped.
+	ctx.warnings.clear()
+	_required_fields(doc, ctx)
+	_compliance(doc, ctx)
 
 
 # ---------------------------------------------------------------- document
@@ -500,10 +511,12 @@ def _field_rule_check(ctx, action, violated, label, **kw):
 # -------------------------------------------------- submit-time validations
 
 
-def _ledger_under_lock(doc, ctx):
-	"""The definitive over-quantity check.
+def _ledger(doc, ctx, lock: bool = True):
+	"""The over-quantity check.
 
-	Reads consumed quantity under a row lock on the source documents. A second
+	At submit (`lock`) this is the definitive one: it reads consumed quantity under a row
+	lock on the source documents. On save it reads without the lock, so editing a draft
+	never holds up other operators and the result is only a warning. A second
 	operator submitting against the same order line at the same moment blocks
 	here until the first commits, then sees the true total and fails properly —
 	rather than both reading zero and both succeeding.
@@ -527,12 +540,15 @@ def _ledger_under_lock(doc, ctx):
 			frappe.db.get_single_value("Stock Settings", "over_delivery_receipt_allowance") or 0
 		)
 
-	consumed = ledger.consumed_qty_for_update(
-		source_doctype=doc.source_doctype,
-		source_documents=list({r.source_document for r in rows if r.source_document}),
-		source_rows=[r.source_row for r in rows],
-		exclude_gate_pass=doc.name,
-	)
+	if lock:
+		consumed = ledger.consumed_qty_for_update(
+			source_doctype=doc.source_doctype,
+			source_documents=list({r.source_document for r in rows if r.source_document}),
+			source_rows=[r.source_row for r in rows],
+			exclude_gate_pass=doc.name,
+		)
+	else:
+		consumed = ledger.consumed_qty([r.source_row for r in rows])
 
 	for row in rows:
 		already = flt(consumed.get(row.source_row, 0))

@@ -43,7 +43,10 @@ class GatePass(Document):
 		self._default_return_date()
 		self._refresh_compliance()
 		self._set_status()
-		self.run_rules()
+		# On submit, before_submit runs the same rules plus the submit-only ones.
+		# Running them here too would show every warning, and log it, twice.
+		if getattr(self, "_action", None) != "submit":
+			self.run_rules()
 
 	def before_submit(self):
 		self._stamp_timestamps()

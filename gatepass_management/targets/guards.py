@@ -86,6 +86,19 @@ def validate_target(doc, method=None):
 	if doc.get("gate_pass"):
 		_check_row_coverage(doc, ctx)
 
+	submitting = getattr(doc, "_action", None) == "submit"
+	if doc.get("gate_pass") and not submitting:
+		# The quantity checks also run at submit, where they can block. On save they only
+		# warn, so the operator sees them once, while the document can still be changed.
+		blocking_before = len(ctx.violations)
+		_check_row_quantities(doc, ctx)
+		_check_total_quantity(doc, ctx)
+		del ctx.violations[blocking_before:]
+
+	if submitting:
+		# Whatever warned here was already shown when the document was saved.
+		ctx.warnings.clear()
+
 	ctx.raise_if_blocked()
 
 
@@ -150,6 +163,8 @@ def before_submit_target(doc, method=None):
 
 	_check_row_quantities(doc, ctx)
 	_check_total_quantity(doc, ctx)
+	# Their warnings were shown on save; only blocking problems matter now.
+	ctx.warnings.clear()
 	ctx.raise_if_blocked()
 
 
