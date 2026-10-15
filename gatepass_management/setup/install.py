@@ -83,10 +83,6 @@ def create_custom_fields():
 
 	_create(fixtures.CUSTOM_FIELDS, ignore_validate=True, update=True)
 
-	for name in fixtures.OBSOLETE_CUSTOM_FIELDS:
-		if frappe.db.exists("Custom Field", name):
-			frappe.delete_doc("Custom Field", name, ignore_permissions=True, force=True)
-
 
 def delete_custom_fields():
 	for doctype, fields in fixtures.CUSTOM_FIELDS.items():
