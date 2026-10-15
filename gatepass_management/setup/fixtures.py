@@ -40,6 +40,28 @@ _GATE_PASS_ITEM_LINK = {
 	"print_hide": 1,
 }
 
+# RGP / NRGP on both Delivery Note and Sales Invoice, and a per-line "No of Lines/Roles" on
+# their item tables. None is no_copy: ERPNext's Delivery Note -> Sales Invoice mapping copies
+# same-named fields, header and item rows alike, which is what carries them forward.
+_LINES_ROLES_FIELD = {
+	"fieldname": "custom_description",
+	"fieldtype": "Small Text",
+	"label": "No of Lines/Roles",
+	"insert_after": "qty",
+	"in_list_view": 1,
+}
+
+_RGP_FIELDS = [
+	{
+		"fieldname": "is_rgp",
+		"fieldtype": "Check",
+		"label": "RGP",
+		"description": "Ticked: Returnable Gate Pass (RGP). Unticked: Non-Returnable (NRGP).",
+		"insert_after": "is_return",
+		"default": "0",
+	},
+]
+
 CUSTOM_FIELDS = {
 	"Purchase Receipt": [
 		dict(_GATE_PASS_LINK, insert_after="supplier"),
@@ -90,9 +112,10 @@ CUSTOM_FIELDS = {
 	"Subcontracting Receipt Item": [dict(_GATE_PASS_ITEM_LINK, insert_after="stock_uom")],
 	"Stock Entry": [dict(_GATE_PASS_LINK, insert_after="company")],
 	"Stock Entry Detail": [dict(_GATE_PASS_ITEM_LINK, insert_after="uom")],
-	"Delivery Note": [dict(_GATE_PASS_LINK, insert_after="customer")],
-	"Delivery Note Item": [dict(_GATE_PASS_ITEM_LINK, insert_after="uom")],
-	"Sales Invoice": [dict(_GATE_PASS_LINK, insert_after="customer")],
+	"Delivery Note": [dict(_GATE_PASS_LINK, insert_after="customer"), *_RGP_FIELDS],
+	"Delivery Note Item": [dict(_GATE_PASS_ITEM_LINK, insert_after="uom"), _LINES_ROLES_FIELD],
+	"Sales Invoice": [dict(_GATE_PASS_LINK, insert_after="customer"), *_RGP_FIELDS],
+	"Sales Invoice Item": [_LINES_ROLES_FIELD],
 	"Purchase Order": [
 		{
 			"fieldname": "gate_pass_status",
@@ -517,3 +540,7 @@ def seed_masters():
 				"is_active": 1,
 			}
 		).insert(ignore_permissions=True)
+
+
+# Custom fields an earlier version created and this one no longer ships.
+OBSOLETE_CUSTOM_FIELDS = ["Delivery Note-custom_description", "Sales Invoice-custom_description"]
