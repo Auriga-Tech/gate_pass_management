@@ -1,0 +1,205 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-08-05 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "gate_pass",
+  "event",
+  "event_datetime",
+  "user",
+  "cb_evt",
+  "reference_doctype",
+  "reference_name",
+  "rule_code",
+  "trace_id",
+  "sb_evt_detail",
+  "field_changed",
+  "old_value",
+  "cb_evt_detail",
+  "new_value",
+  "qty_delta",
+  "sb_evt_msg",
+  "message",
+  "reason",
+  "values_json",
+  "error_log"
+ ],
+ "fields": [
+  {
+   "fieldname": "gate_pass",
+   "fieldtype": "Link",
+   "label": "Gate Pass",
+   "options": "Gate Pass",
+   "reqd": 1,
+   "read_only": 1,
+   "in_list_view": 1,
+   "search_index": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "event",
+   "fieldtype": "Select",
+   "label": "Event",
+   "reqd": 1,
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "options": "Created\nSubmitted\nEntered\nExited\nTarget Created\nTarget Cancelled\nTimestamp Amended\nDiscrepancy Recorded\nReturn Recorded\nClosed\nCancelled\nAmended\nRule Warned\nValidation Failed\nCompliance Overridden\nAttachment Removed\nTarget Creation Failed"
+  },
+  {
+   "fieldname": "event_datetime",
+   "fieldtype": "Datetime",
+   "label": "When",
+   "reqd": 1,
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "Who",
+   "options": "User",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "cb_evt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Reference Type",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Reference",
+   "options": "reference_doctype",
+   "read_only": 1
+  },
+  {
+   "fieldname": "rule_code",
+   "fieldtype": "Data",
+   "label": "Rule",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "trace_id",
+   "fieldtype": "Data",
+   "label": "Trace ID",
+   "read_only": 1,
+   "description": "Correlates this event with the structured log line and the Error Log."
+  },
+  {
+   "fieldname": "sb_evt_detail",
+   "fieldtype": "Section Break",
+   "label": "Detail"
+  },
+  {
+   "fieldname": "field_changed",
+   "fieldtype": "Data",
+   "label": "Field",
+   "read_only": 1
+  },
+  {
+   "fieldname": "old_value",
+   "fieldtype": "Small Text",
+   "label": "Was",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_evt_detail",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "new_value",
+   "fieldtype": "Small Text",
+   "label": "Now",
+   "read_only": 1
+  },
+  {
+   "fieldname": "qty_delta",
+   "fieldtype": "Float",
+   "label": "Qty Change",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_evt_msg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "message",
+   "fieldtype": "Small Text",
+   "label": "Message",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason Given",
+   "read_only": 1
+  },
+  {
+   "fieldname": "values_json",
+   "fieldtype": "Code",
+   "label": "Values",
+   "options": "JSON",
+   "read_only": 1
+  },
+  {
+   "fieldname": "error_log",
+   "fieldtype": "Link",
+   "label": "Error Log",
+   "options": "Error Log",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-08-05 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Gate Pass Management",
+ "name": "Gate Pass Event Log",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "Gate Pass Manager",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Gate Pass Auditor",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Gate Pass User",
+   "read": 1,
+   "report": 1
+  },
+  {
+   "role": "System Manager",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "event_datetime",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "hash"
+}

@@ -1,0 +1,536 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-08-05 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sb_identity",
+  "source_name",
+  "button_label",
+  "enabled",
+  "cb_identity",
+  "direction",
+  "sequence",
+  "is_standard",
+  "sb_source_doc",
+  "source_doctype",
+  "sub_type",
+  "cb_source_doc",
+  "source_filters",
+  "allowed_statuses",
+  "sb_mapping",
+  "child_table",
+  "item_field",
+  "qty_field",
+  "consumed_field",
+  "cb_mapping",
+  "uom_field",
+  "rate_field",
+  "warehouse_field",
+  "bom_field",
+  "sb_mapping2",
+  "pending_formula",
+  "field_map",
+  "sb_party",
+  "party_type",
+  "party_field",
+  "cb_party",
+  "party_filters",
+  "sb_selection",
+  "allow_row_selection",
+  "row_columns",
+  "cb_selection",
+  "dialog_fields",
+  "allowed_roles",
+  "sb_qty_policy",
+  "qty_policy",
+  "allow_over_qty",
+  "over_qty_allowance_pct",
+  "cb_qty_policy",
+  "allow_zero_qty_rows",
+  "allow_discrepancy",
+  "sb_target",
+  "target_doctype",
+  "target_creation_mode",
+  "target_mapper",
+  "cb_target",
+  "copy_attachments_to_target",
+  "enforce_on_target",
+  "block_native_target_button",
+  "sb_automation",
+  "auto_create_draft",
+  "auto_create_assign_to_role",
+  "cb_automation",
+  "auto_create_condition",
+  "sb_checklist",
+  "checklist",
+  "sb_compliance",
+  "compliance_intro",
+  "compliance_rules",
+  "sb_rule_overrides",
+  "rule_overrides_intro",
+  "rule_overrides",
+  "sb_desc",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "sb_identity",
+   "fieldtype": "Section Break",
+   "label": "Flow"
+  },
+  {
+   "fieldname": "source_name",
+   "fieldtype": "Data",
+   "label": "Name",
+   "reqd": 1,
+   "in_list_view": 1,
+   "description": "How this flow is described to users, e.g. 'Purchase Order - Inward'."
+  },
+  {
+   "fieldname": "button_label",
+   "fieldtype": "Data",
+   "label": "Button Label",
+   "reqd": 1,
+   "description": "Shown under 'Get Items From' on the gate pass."
+  },
+  {
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled",
+   "default": "1",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "cb_identity",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "direction",
+   "fieldtype": "Select",
+   "label": "Direction",
+   "options": "In\nOut",
+   "reqd": 1,
+   "in_list_view": 1,
+   "description": "A gate pass created from this flow takes this direction automatically. The operator picks the document they are holding, not a direction."
+  },
+  {
+   "fieldname": "sequence",
+   "fieldtype": "Int",
+   "label": "Display Order",
+   "default": "10"
+  },
+  {
+   "fieldname": "is_standard",
+   "fieldtype": "Check",
+   "label": "Shipped with the App",
+   "read_only": 1,
+   "description": "Standard flows are reconciled on migrate. Duplicate one to customise it."
+  },
+  {
+   "fieldname": "sb_source_doc",
+   "fieldtype": "Section Break",
+   "label": "Source Document"
+  },
+  {
+   "fieldname": "source_doctype",
+   "fieldtype": "Link",
+   "label": "Source DocType",
+   "options": "DocType",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "sub_type",
+   "fieldtype": "Data",
+   "label": "Sub Type",
+   "description": "Stamped on the gate pass, e.g. 'Return of Goods', 'Finished Goods'."
+  },
+  {
+   "fieldname": "cb_source_doc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "source_filters",
+   "fieldtype": "Code",
+   "label": "Selection Filters (JSON)",
+   "options": "JSON",
+   "description": "Merged into the document picker, e.g. {\"docstatus\": 1, \"is_return\": 1}"
+  },
+  {
+   "fieldname": "allowed_statuses",
+   "fieldtype": "Small Text",
+   "label": "Allowed Statuses",
+   "description": "Comma separated. Leave blank to allow any status."
+  },
+  {
+   "fieldname": "sb_mapping",
+   "fieldtype": "Section Break",
+   "label": "Item Mapping"
+  },
+  {
+   "fieldname": "child_table",
+   "fieldtype": "Data",
+   "label": "Child Table Fieldname",
+   "reqd": 1,
+   "description": "e.g. items, supplied_items"
+  },
+  {
+   "fieldname": "item_field",
+   "fieldtype": "Data",
+   "label": "Item Fieldname",
+   "reqd": 1,
+   "default": "item_code"
+  },
+  {
+   "fieldname": "qty_field",
+   "fieldtype": "Data",
+   "label": "Quantity Fieldname",
+   "reqd": 1,
+   "default": "qty"
+  },
+  {
+   "fieldname": "consumed_field",
+   "fieldtype": "Data",
+   "label": "Received/Consumed Fieldname",
+   "description": "e.g. received_qty. Participates in the pending formula."
+  },
+  {
+   "fieldname": "cb_mapping",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "uom_field",
+   "fieldtype": "Data",
+   "label": "UOM Fieldname",
+   "description": " Leave blank if this child table has no such field."
+  },
+  {
+   "fieldname": "rate_field",
+   "fieldtype": "Data",
+   "label": "Rate Fieldname",
+   "description": " Leave blank if this child table has no such field."
+  },
+  {
+   "fieldname": "warehouse_field",
+   "fieldtype": "Data",
+   "label": "Warehouse Fieldname",
+   "description": " Leave blank if this child table has no such field."
+  },
+  {
+   "fieldname": "bom_field",
+   "fieldtype": "Data",
+   "label": "BOM Fieldname"
+  },
+  {
+   "fieldname": "sb_mapping2",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "pending_formula",
+   "fieldtype": "Select",
+   "label": "Pending Quantity Formula",
+   "reqd": 1,
+   "options": "qty - consumed\nqty - max(received, consumed)\nabs(qty) - consumed\nqty",
+   "default": "qty - consumed",
+   "description": "'consumed' is the total already gate-passed against that source line."
+  },
+  {
+   "fieldname": "field_map",
+   "fieldtype": "Table",
+   "label": "Additional Field Mapping",
+   "options": "Gate Pass Source Field Map"
+  },
+  {
+   "fieldname": "sb_party",
+   "fieldtype": "Section Break",
+   "label": "Party"
+  },
+  {
+   "fieldname": "party_type",
+   "fieldtype": "Select",
+   "label": "Party Type",
+   "options": "Supplier\nCustomer\nCompany\nFrom Field",
+   "default": "Supplier",
+   "reqd": 1
+  },
+  {
+   "fieldname": "party_field",
+   "fieldtype": "Data",
+   "label": "Party Fieldname",
+   "description": "Supports one level of indirection, e.g. subcontracting_order.supplier"
+  },
+  {
+   "fieldname": "cb_party",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "party_filters",
+   "fieldtype": "Code",
+   "label": "Party Filters (JSON)",
+   "options": "JSON",
+   "description": "Restricts the party picker, e.g. {\"supplier_group\": \"Job Work\"}"
+  },
+  {
+   "fieldname": "sb_selection",
+   "fieldtype": "Section Break",
+   "label": "Operator Experience"
+  },
+  {
+   "fieldname": "allow_row_selection",
+   "fieldtype": "Check",
+   "label": "Let the Operator Pick Individual Lines",
+   "default": "1"
+  },
+  {
+   "fieldname": "row_columns",
+   "fieldtype": "Data",
+   "label": "Columns in the Picker",
+   "default": "item_code,item_name,qty,received_qty"
+  },
+  {
+   "fieldname": "cb_selection",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "dialog_fields",
+   "fieldtype": "Code",
+   "label": "Pre-Filter Fields (JSON)",
+   "options": "JSON",
+   "description": "Extra fields shown before the document picker opens."
+  },
+  {
+   "fieldname": "allowed_roles",
+   "fieldtype": "Table MultiSelect",
+   "label": "Roles That May Use This Flow",
+   "options": "Gate Pass Role",
+   "description": "Leave empty to allow everyone. Also drives row-level visibility when 'Restrict by Source Type Role' is on."
+  },
+  {
+   "fieldname": "sb_qty_policy",
+   "fieldtype": "Section Break",
+   "label": "Quantity Policy"
+  },
+  {
+   "fieldname": "qty_policy",
+   "fieldtype": "Select",
+   "label": "Quantity Policy",
+   "reqd": 1,
+   "options": "Editable\nPrefilled, Editable\nEditable within Tolerance\nLocked to Source",
+   "default": "Editable",
+   "description": "Outward dispatch against an invoice should be Locked to Source: the gate verifies what leaves, it does not restate the invoice. Inward against an order should be Editable, because what arrived is unknown until counted."
+  },
+  {
+   "fieldname": "allow_over_qty",
+   "fieldtype": "Check",
+   "label": "Allow Exceeding the Pending Quantity"
+  },
+  {
+   "fieldname": "over_qty_allowance_pct",
+   "fieldtype": "Percent",
+   "label": "Over-Quantity Allowance %",
+   "description": "Blank falls back to Stock Settings — Over Receipt/Delivery Allowance."
+  },
+  {
+   "fieldname": "cb_qty_policy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "allow_zero_qty_rows",
+   "fieldtype": "Check",
+   "label": "Allow Zero-Quantity Rows"
+  },
+  {
+   "fieldname": "allow_discrepancy",
+   "fieldtype": "Check",
+   "label": "Allow Shortage / Damage / Rejection",
+   "default": "1"
+  },
+  {
+   "fieldname": "sb_target",
+   "fieldtype": "Section Break",
+   "label": "Target Document"
+  },
+  {
+   "fieldname": "target_doctype",
+   "fieldtype": "Link",
+   "label": "Target DocType",
+   "options": "DocType",
+   "description": "What this gate pass can produce, e.g. Purchase Receipt."
+  },
+  {
+   "fieldname": "target_creation_mode",
+   "fieldtype": "Select",
+   "label": "Creation Mode",
+   "options": "None\nAuto on Submit\nManual Button\nFrom Target Form",
+   "default": "None",
+   "description": "Auto on Submit creates the target inside the same transaction — a failure aborts the submit rather than leaving a gate pass that silently produced nothing."
+  },
+  {
+   "fieldname": "target_mapper",
+   "fieldtype": "Data",
+   "label": "Custom Mapper (dotted path)",
+   "description": "Leave blank to use the built-in generic mapper."
+  },
+  {
+   "fieldname": "cb_target",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "copy_attachments_to_target",
+   "fieldtype": "Check",
+   "label": "Copy Attachments to Target",
+   "default": "1"
+  },
+  {
+   "fieldname": "enforce_on_target",
+   "fieldtype": "Select",
+   "label": "Gate Pass on Target Document",
+   "options": "Not Required\nRequired\nForbidden",
+   "default": "Not Required"
+  },
+  {
+   "fieldname": "block_native_target_button",
+   "fieldtype": "Check",
+   "label": "Target Only Via Gate Pass",
+   "description": "Removes the source form's own Create button AND refuses server-side, so API and bulk imports cannot bypass it."
+  },
+  {
+   "fieldname": "sb_automation",
+   "fieldtype": "Section Break",
+   "label": "Automation"
+  },
+  {
+   "fieldname": "auto_create_draft",
+   "fieldtype": "Check",
+   "label": "Auto-Create a Draft Gate Pass",
+   "description": "When the source document is submitted, create a draft gate pass for the gate to complete. Inverts the workflow from 'create from scratch' to 'complete and confirm'."
+  },
+  {
+   "fieldname": "auto_create_assign_to_role",
+   "fieldtype": "Link",
+   "label": "Assign Draft To Role",
+   "options": "Role",
+   "depends_on": "auto_create_draft"
+  },
+  {
+   "fieldname": "cb_automation",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "auto_create_condition",
+   "fieldtype": "Code",
+   "label": "Condition (Python expression)",
+   "options": "Python",
+   "depends_on": "auto_create_draft",
+   "description": "Optional. Evaluated against the source doc, e.g. doc.stock_entry_type == 'Send to Subcontractor'"
+  },
+  {
+   "fieldname": "sb_checklist",
+   "fieldtype": "Section Break",
+   "label": "Required Documents"
+  },
+  {
+   "fieldname": "checklist",
+   "fieldtype": "Table",
+   "label": "Checklist",
+   "options": "Gate Pass Source Checklist"
+  },
+  {
+   "fieldname": "sb_compliance",
+   "fieldtype": "Section Break",
+   "label": "Statutory Compliance"
+  },
+  {
+   "fieldname": "compliance_intro",
+   "fieldtype": "HTML",
+   "options": "<p class='text-muted'>The gate is the last point at which a non-compliant dispatch is still preventable. Checks below are evaluated when the gate pass loads and again at submit.</p>"
+  },
+  {
+   "fieldname": "compliance_rules",
+   "fieldtype": "Table",
+   "label": "Compliance Checks",
+   "options": "Gate Pass Compliance Rule"
+  },
+  {
+   "fieldname": "sb_rule_overrides",
+   "fieldtype": "Section Break",
+   "label": "Rule Overrides",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "rule_overrides_intro",
+   "fieldtype": "HTML",
+   "options": "<p class='text-muted'>Override global rule settings for this flow only. For example, block on over-quantity for purchase receipts while only warning on delivery notes.</p>"
+  },
+  {
+   "fieldname": "rule_overrides",
+   "fieldtype": "Table",
+   "label": "Rule Overrides",
+   "options": "Gate Pass Source Rule Override"
+  },
+  {
+   "fieldname": "sb_desc",
+   "fieldtype": "Section Break",
+   "label": "Description",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "label": "Description"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-08-05 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Gate Pass Management",
+ "name": "Gate Pass Source",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "Gate Pass Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "share": 1,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "Gate Pass User",
+   "read": 1
+  },
+  {
+   "role": "Gate Pass Operator",
+   "read": 1
+  },
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "share": 1,
+   "print": 1,
+   "email": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "field:source_name",
+ "naming_rule": "By fieldname",
+ "title_field": "source_name",
+ "search_fields": "source_doctype,direction",
+ "track_changes": 1
+}

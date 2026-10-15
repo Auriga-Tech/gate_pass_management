@@ -1,0 +1,21 @@
+{
+ "aggregate_function_based_on": null,
+ "creation": "2026-08-06 10:00:00.000000",
+ "doctype": "Number Card",
+ "document_type": "Gate Pass",
+ "dynamic_filters_json": "[]",
+ "filters_json": "[[\"Gate Pass\", \"docstatus\", \"=\", 0], [\"Gate Pass\", \"compliance_status\", \"=\", \"Pending\"]]",
+ "function": "Count",
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "Compliance Pending",
+ "modified": "2026-08-07 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Gate Pass Management",
+ "name": "Gate Pass Compliance Pending",
+ "owner": "Administrator",
+ "show_percentage_stats": 0,
+ "stats_time_interval": "Daily",
+ "type": "Document Type",
+ "color": "#E24C4C"
+}

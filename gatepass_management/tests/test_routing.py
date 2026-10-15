@@ -21,14 +21,14 @@ class TestRouting(FrappeTestCase):
 		"""No workspace this app ships may share a slug with any DocType."""
 		workspaces = frappe.get_all(
 			"Workspace",
-			filters={"module": "Gate Pass", "public": 1},
+			filters={"module": "Gate Pass Management", "public": 1},
 			pluck="name",
 		)
 		self.assertTrue(workspaces, "expected at least one Gate Pass workspace")
 
 		doctype_slugs = {
 			_slug(d): d
-			for d in frappe.get_all("DocType", filters={"module": "Gate Pass"}, pluck="name")
+			for d in frappe.get_all("DocType", filters={"module": "Gate Pass Management"}, pluck="name")
 		}
 
 		for workspace in workspaces:
@@ -38,7 +38,7 @@ class TestRouting(FrappeTestCase):
 				shadowed,
 				f"Workspace {workspace!r} shadows the DocType {shadowed!r}: both resolve to "
 				f"/app/{slug}. Every {shadowed} form would be unreachable by URL. "
-				f"Rename the workspace — see gate_pass/workspace/README.md.",
+				f"Rename the workspace — see gate_pass_management/workspace/README.md.",
 			)
 
 	def test_gate_pass_form_route_is_reachable(self):

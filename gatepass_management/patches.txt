@@ -1,3 +1,4 @@
 [pre_model_sync]
+gatepass_management.patches.v1_0.rename_module_to_gate_pass_management
 
 [post_model_sync]

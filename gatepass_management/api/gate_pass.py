@@ -15,7 +15,7 @@ from frappe import _
 from frappe.utils import cint, flt, get_link_to_form, now_datetime, today
 
 from gatepass_management import ledger
-from gatepass_management.gate_pass.doctype.gate_pass_event_log.api import log_event
+from gatepass_management.gate_pass_management.doctype.gate_pass_event_log.api import log_event
 from gatepass_management.utils import guards
 from gatepass_management.utils.logger import get_logger
 
@@ -359,7 +359,7 @@ def record_discrepancy(gate_pass: str, rows: str, notes: str, reason: str = ""):
 @frappe.whitelist()
 def get_party_config() -> dict:
 	"""Party types the form offers, and the one to preselect for a direction."""
-	from gatepass_management.gate_pass.doctype.gate_pass.gate_pass import allowed_party_types
+	from gatepass_management.gate_pass_management.doctype.gate_pass.gate_pass import allowed_party_types
 
 	allowed = allowed_party_types()
 	default = guards.get_settings().default_party_type
@@ -385,7 +385,7 @@ def get_party_defaults(party_type: str, party: str) -> dict:
 	from frappe.contacts.doctype.address.address import get_default_address
 	from frappe.contacts.doctype.contact.contact import get_default_contact
 
-	from gatepass_management.gate_pass.doctype.gate_pass.gate_pass import allowed_party_types
+	from gatepass_management.gate_pass_management.doctype.gate_pass.gate_pass import allowed_party_types
 
 	if party_type not in allowed_party_types():
 		frappe.throw(_("Party Type must be one of: {0}.").format(", ".join(allowed_party_types())))

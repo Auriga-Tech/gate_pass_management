@@ -30,7 +30,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt, get_link_to_form, now_datetime
 
-from gatepass_management.gate_pass.doctype.gate_pass_event_log.api import log_event
+from gatepass_management.gate_pass_management.doctype.gate_pass_event_log.api import log_event
 from gatepass_management.utils.logger import get_logger, log_failure, new_trace_id
 
 
@@ -338,7 +338,7 @@ def _refresh_processed(gp):
 		if r.link_type == "Target"
 		and frappe.db.get_value(r.reference_doctype, r.reference_name, "docstatus") != 2
 	)
-	from gatepass_management.gate_pass.doctype.gate_pass.gate_pass import (
+	from gatepass_management.gate_pass_management.doctype.gate_pass.gate_pass import (
 		compute_per_processed,
 		derive_status,
 	)
