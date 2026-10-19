@@ -182,6 +182,10 @@ frappe.ui.form.on("Gate Pass", {
 		const apply = () => {
 			const allow = !!(gatepass.party_config || {}).allow_add_item_rows;
 			grid.cannot_add_rows = frm.doc.docstatus === 0 && !allow;
+			// Package count is tracked only when Gate Pass Settings turns it on.
+			const show_packages = !!(gatepass.party_config || {}).enable_packages;
+			grid.update_docfield_property("packages", "hidden", show_packages ? 0 : 1);
+			frm.toggle_display("total_packages", show_packages);
 			grid.refresh();
 		};
 		apply();

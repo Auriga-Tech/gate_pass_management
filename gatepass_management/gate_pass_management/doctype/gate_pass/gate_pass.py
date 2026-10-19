@@ -283,7 +283,11 @@ class GatePass(Document):
 		self.total_damaged_qty = sum(flt(r.damaged_qty) for r in self.items)
 		self.total_rejected_qty = sum(flt(r.rejected_qty) for r in self.items)
 		self.total_amount = sum(flt(r.amount) for r in self.items)
-		self.total_packages = sum(cint(r.packages) for r in self.items)
+		self.total_packages = (
+			sum(cint(r.packages) for r in self.items)
+			if cint(guards.get_settings().enable_packages)
+			else 0
+		)
 		self.total_charges = sum(flt(c.amount) for c in self.charges)
 
 		self.has_discrepancy = 1 if (

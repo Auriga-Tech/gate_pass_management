@@ -367,6 +367,7 @@ def get_party_config() -> dict:
 		"allowed": allowed,
 		"default": default if default in allowed else None,
 		"allow_add_item_rows": bool(guards.get_settings().get("allow_add_item_rows")),
+		"enable_packages": bool(guards.get_settings().get("enable_packages")),
 		# Material arriving is from a supplier; material leaving goes to a customer.
 		"by_direction": {
 			d: t for d, t in (("In", "Supplier"), ("Out", "Customer")) if t in allowed

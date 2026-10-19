@@ -8,6 +8,7 @@
  "field_order": [
   "item_code",
   "item_name",
+  "folio",
   "is_non_stock",
   "description",
   "sb_qty",
@@ -68,6 +69,13 @@
    "in_list_view": 1,
    "columns": 2,
    "read_only": 1
+  },
+  {
+   "fieldname": "folio",
+   "fieldtype": "Data",
+   "label": "Folio",
+   "in_list_view": 1,
+   "columns": 1
   },
   {
    "fieldname": "is_non_stock",
@@ -239,8 +247,7 @@
   {
    "fieldname": "packages",
    "fieldtype": "Int",
-   "label": "Packages",
-   "read_only": 1
+   "label": "Packages"
   },
   {
    "fieldname": "cb_stock",
