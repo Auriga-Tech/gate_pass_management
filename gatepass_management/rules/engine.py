@@ -235,23 +235,35 @@ class RuleContext:
 
 		from gatepass_management.gate_pass_management.doctype.gate_pass_event_log.api import log_event
 
+		# The document being checked is either a Gate Pass or a target document
+		# that points at one. A target's own name is not a Gate Pass, so logging
+		# `self.doc.name` wrote an event whose gate_pass link pointed at a
+		# receipt — a dangling reference in the one record that has to be
+		# trustworthy. Log against the pass, and name the target separately.
+		is_gate_pass = self.doc.doctype == "Gate Pass"
+		gate_pass = self.doc.get("name") if is_gate_pass else self.doc.get("gate_pass")
+
 		for v in self.warnings:
 			self.logger.info(
 				"rule_warned",
 				extra={
 					"rule": v.code,
-					"gate_pass": self.doc.get("name"),
+					"gate_pass": gate_pass,
+					"doctype": self.doc.doctype,
+					"docname": self.doc.get("name"),
 					"row": v.row_idx,
 					"values": v.values,
 				},
 			)
-			if self.doc.get("name") and not self.doc.get("__islocal"):
+			if gate_pass and not self.doc.get("__islocal"):
 				log_event(
-					gate_pass=self.doc.name,
+					gate_pass=gate_pass,
 					event="Rule Warned",
 					message=v.message,
 					rule_code=v.code,
 					values=v.values,
+					reference_doctype=None if is_gate_pass else self.doc.doctype,
+					reference_name=None if is_gate_pass else self.doc.get("name"),
 				)
 
 		body = "".join(f"<li>{self._format_one(v)}</li>" for v in self.warnings)

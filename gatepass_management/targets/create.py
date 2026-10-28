@@ -205,18 +205,36 @@ def _apply_qty(item, gp_row):
 	`accepted_qty` — what actually came in — not `qty`, which is what the
 	paperwork claimed. Damage becomes rejected qty where the target supports it,
 	so the receipt reflects reality without a second data-entry step.
+
+	Shortage is deliberately NOT carried over. Rejected qty still writes a Stock
+	Ledger Entry into the rejected warehouse, so booking short-delivered goods
+	there would create stock that does not exist and close the order line as
+	fully received, which is the opposite of what recording a shortage is for.
+	Short goods are simply not received, and the order line stays open.
 	"""
 	accepted = flt(gp_row.accepted_qty)
+	damaged = flt(gp_row.damaged_qty)
 	item.qty = accepted
 
 	if item.meta.has_field("received_qty"):
-		item.received_qty = accepted + flt(gp_row.damaged_qty)
+		item.received_qty = accepted + damaged
 	if item.meta.has_field("rejected_qty"):
-		item.rejected_qty = flt(gp_row.damaged_qty)
-		if flt(gp_row.damaged_qty) and item.meta.has_field("rejected_warehouse"):
+		item.rejected_qty = damaged
+		if damaged and item.meta.has_field("rejected_warehouse"):
 			item.rejected_warehouse = gp_row.rejected_warehouse or frappe.db.get_single_value(
 				"Gate Pass Settings", "default_rejected_warehouse"
 			)
+			if not item.rejected_warehouse:
+				# Without this the receipt fails deep inside ERPNext's own
+				# validation, where nothing names the gate pass row at fault.
+				frappe.throw(
+					_(
+						"Row {0} ({1}) has {2} damaged, but no Rejected Warehouse to hold it. "
+						"Set one on the Gate Pass row, or a Default Rejected Warehouse in "
+						"Gate Pass Settings, then create the receipt again."
+					).format(gp_row.idx, gp_row.item_code, damaged),
+					title=_("Rejected Warehouse missing"),
+				)
 	if item.meta.has_field("amount"):
 		item.amount = accepted * flt(item.get("rate"))
 	if gp_row.bom and item.meta.has_field("bom"):

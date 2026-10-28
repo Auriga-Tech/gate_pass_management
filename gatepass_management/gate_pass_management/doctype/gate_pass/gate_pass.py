@@ -14,6 +14,7 @@ from __future__ import annotations
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.query_builder.functions import Max, Sum
 from frappe.utils import add_days, cint, flt, get_link_to_form, getdate, now_datetime, today
 
 from gatepass_management import ledger
@@ -29,6 +30,7 @@ class GatePass(Document):
 	def before_insert(self):
 		self._set_security_officer()
 		self._render_tracking_id()
+		self._default_return_date()
 		self._seed_checklist()
 		self._seed_charges()
 
@@ -55,6 +57,7 @@ class GatePass(Document):
 		self._log("Entered" if self.direction == "In" else "Exited")
 		self._set_status()
 		self.db_set("status", self.status, update_modified=False)
+		self._sync_returnable_origin()
 		self._create_auto_target()
 
 	def before_cancel(self):
@@ -64,6 +67,8 @@ class GatePass(Document):
 		self.flags.ignore_links = True
 		self.status = "Cancelled"
 		self._log("Cancelled")
+		# A cancelled return leg gives the quantity back to the pass it closed.
+		self._sync_returnable_origin()
 
 	def on_update_after_submit(self):
 		self._compute_totals()
@@ -156,6 +161,71 @@ class GatePass(Document):
 					"is_mandatory": row.is_mandatory,
 				},
 			)
+
+	def _default_return_date(self):
+		"""A returnable pass with no due date can never become overdue.
+
+		`flag_overdue_returns` selects on `expected_return_date < today`, and a
+		NULL never matches that, so a pass saved without a date would sit as
+		Pending Return for ever and never be chased. Fill it from the configured
+		window rather than leaving a silent hole.
+		"""
+		if self.direction != "Out" or not self.is_returnable or self.expected_return_date:
+			return
+		days = cint(guards.get_settings().default_return_days)
+		if days > 0:
+			self.expected_return_date = add_days(self.posting_date or today(), days)
+
+	def _sync_returnable_origin(self):
+		"""Keep the outward pass this one returns against up to date.
+
+		A return leg is a gate pass whose source is the outward pass. Nothing
+		else writes `returned_qty`, `actual_return_date` or `return_status`, so
+		without this a returnable pass stays Pending Return no matter how much
+		comes back. Recomputed from the submitted legs on every submit and
+		cancel, so it is always the sum rather than a running total that can
+		drift.
+		"""
+		if self.source_doctype != "Gate Pass" or not self.source_document:
+			return
+		if not frappe.db.exists("Gate Pass", self.source_document):
+			return
+
+		origin = frappe.get_doc("Gate Pass", self.source_document)
+		if origin.docstatus != 1 or not origin.is_returnable:
+			return
+
+		GP = frappe.qb.DocType("Gate Pass")
+		GPI = frappe.qb.DocType("Gate Pass Item")
+		row = (
+			frappe.qb.from_(GPI)
+			.inner_join(GP)
+			.on(GP.name == GPI.parent)
+			.select(Sum(GPI.qty).as_("returned"), Max(GP.posting_date).as_("last_date"))
+			.where(GP.docstatus == 1)
+			.where(GP.source_doctype == "Gate Pass")
+			.where(GP.source_document == origin.name)
+		).run(as_dict=True)
+
+		returned = flt(row[0].returned) if row else 0.0
+		last_date = row[0].last_date if row else None
+
+		origin.db_set("returned_qty", returned, update_modified=False)
+		origin.db_set("actual_return_date", last_date if returned else None, update_modified=False)
+		origin.reload()
+		origin.db_set("return_status", derive_return_status(origin), update_modified=False)
+		origin.db_set("status", derive_status(origin), update_modified=False)
+
+		from gatepass_management.gate_pass_management.doctype.gate_pass_event_log.api import log_event
+
+		log_event(
+			gate_pass=origin.name,
+			event="Return Recorded",
+			reference_doctype="Gate Pass",
+			reference_name=self.name,
+			qty_delta=returned,
+			message=_("{0} of {1} returned.").format(flt(returned), flt(origin.total_qty)),
+		)
 
 	def _seed_charges(self):
 		settings = guards.get_settings()
@@ -297,6 +367,7 @@ class GatePass(Document):
 	# ---------------------------------------------------------------- status
 
 	def _set_status(self):
+		self.return_status = derive_return_status(self)
 		self.status = derive_status(self)
 
 	# ----------------------------------------------------------------- rules
@@ -419,13 +490,30 @@ def derive_status(doc) -> str:
 			return "Partially Processed" if flt(doc.per_processed) > 0 else "Inside"
 		return "Completed"
 
+	return {
+		"Returned": "Returned",
+		"Partially Returned": "Partially Returned",
+		"Overdue": "Overdue Return",
+	}.get(derive_return_status(doc), "Pending Return")
+
+
+def derive_return_status(doc) -> str:
+	"""How much of a returnable outward pass has come back.
+
+	Kept separate from `derive_status` because the two answer different
+	questions — this one is only about the return leg, and it is what the
+	Pending Returnable report and the overdue scheduler read.
+	"""
+	if doc.direction != "Out" or not doc.is_returnable:
+		return "Not Applicable"
+
 	returned = flt(doc.returned_qty)
 	total = flt(doc.total_qty)
 
-	if returned >= total and total:
+	if total and returned >= total:
 		return "Returned"
 	if returned > 0:
 		return "Partially Returned"
 	if doc.expected_return_date and getdate(doc.expected_return_date) < getdate(today()):
-		return "Overdue Return"
-	return "Pending Return"
+		return "Overdue"
+	return "Pending"

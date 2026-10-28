@@ -34,6 +34,7 @@ def run(doc, ctx, at_submit: bool = False):
 	_field_rules(doc, ctx)
 
 	if at_submit:
+		_required_fields(doc, ctx)
 		_ledger_under_lock(doc, ctx)
 		_checklist(doc, ctx)
 		_charges(doc, ctx)
@@ -553,6 +554,35 @@ def _charges(doc, ctx):
 			ctx.check("CHK-CHARGE-MANDATORY", True,
 			          _("Enter an amount for {0}.").format(frappe.bold(row.charge_type)),
 			          fieldname="charges")
+
+
+# Gate Pass Settings → Required Fields. Checked at submit rather than on save,
+# so a draft auto-created from a Purchase Order can exist before the vehicle
+# arrives and the operator has anything to type into these.
+_REQUIRED_BY_SETTING = {
+	"require_location": ("location", "Location"),
+	"require_gate": ("gate", "Gate"),
+	"require_vehicle": ("vehicle_number", "Vehicle Number"),
+	"require_driver": ("driver_name", "Driver Name"),
+	"require_reference_no": ("reference_no", "Invoice / Challan No"),
+}
+
+
+def _required_fields(doc, ctx):
+	"""Enforce the Required Fields switches in Gate Pass Settings.
+
+	These shipped in Settings and were described in the User Manual but nothing
+	read them, so ticking Vehicle Number as required had no effect at all.
+	"""
+	settings = guards.get_settings()
+	for setting, (fieldname, label) in _REQUIRED_BY_SETTING.items():
+		if not settings.get(setting):
+			continue
+		value = doc.get(fieldname)
+		if isinstance(value, str):
+			value = value.strip()
+		if not value:
+			_field_rule_check(ctx, "Block", True, _(label), fieldname=fieldname)
 
 
 def _inspection(doc, ctx):

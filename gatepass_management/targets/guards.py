@@ -332,15 +332,32 @@ def _sync_gate_pass(gate_pass: str):
 
 
 def _ignore_gate_pass_link(doc):
-	"""Keep Frappe's generic link check quiet so our own messages surface instead."""
-	if not isinstance(getattr(doc, "ignore_linked_doctypes", None), list):
-		doc.ignore_linked_doctypes = []
-	if "Gate Pass" not in doc.ignore_linked_doctypes:
-		doc.ignore_linked_doctypes.append("Gate Pass")
+	"""Keep Frappe's generic link check quiet so our own messages surface instead.
+
+	ERPNext sets `ignore_linked_doctypes` itself in its own `on_cancel`, as a
+	TUPLE of its ledger doctypes — GL Entry, Stock Ledger Entry, Repost Item
+	Valuation and friends. Add to whatever is already there rather than testing
+	for a list and replacing it: a tuple fails that test, so replacing it threw
+	ERPNext's own exclusions away and cancelling a receipt then failed on its own
+	ledger entries.
+	"""
+	ignored = list(getattr(doc, "ignore_linked_doctypes", None) or [])
+	if "Gate Pass" not in ignored:
+		ignored.append("Gate Pass")
+	doc.ignore_linked_doctypes = ignored
 
 
 def _party_of(doc) -> tuple[str | None, str | None]:
-	for party_type, field in (("Supplier", "supplier"), ("Customer", "customer")):
-		if doc.meta.has_field(field) and doc.get(field):
+	for party_type, field in (("Supplier", "supplier"), ("Customer", "customer"), (None, "party")):
+		if not doc.meta.has_field(field) or not doc.get(field):
+			continue
+		if party_type:
 			return party_type, doc.get(field)
+		# A `party` field carries its own type: a Dynamic Link names the field
+		# holding it, a plain Link names the doctype outright.
+		df = doc.meta.get_field(field)
+		if df.fieldtype == "Dynamic Link":
+			return doc.get(df.options), doc.get(field)
+		if df.fieldtype == "Link":
+			return df.options, doc.get(field)
 	return None, None

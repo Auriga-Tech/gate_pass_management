@@ -106,14 +106,17 @@ has_permission = {
 # Dashboards
 # ---------------------------------------------------------------------------
 
+# One function per doctype: Frappe gives a dashboard override only the dashboard
+# data, never the doctype, and the Gate Pass link back is a Dynamic Link that
+# needs to know which doctype it is resolving.
 override_doctype_dashboards = {
-	"Purchase Order": "gatepass_management.utils.dashboards.get_dashboard_data",
-	"Subcontracting Order": "gatepass_management.utils.dashboards.get_dashboard_data",
-	"Purchase Receipt": "gatepass_management.utils.dashboards.get_dashboard_data",
-	"Subcontracting Receipt": "gatepass_management.utils.dashboards.get_dashboard_data",
-	"Stock Entry": "gatepass_management.utils.dashboards.get_dashboard_data",
-	"Delivery Note": "gatepass_management.utils.dashboards.get_dashboard_data",
-	"Sales Invoice": "gatepass_management.utils.dashboards.get_dashboard_data",
+	"Purchase Order": "gatepass_management.utils.dashboards.get_purchase_order_dashboard",
+	"Subcontracting Order": "gatepass_management.utils.dashboards.get_subcontracting_order_dashboard",
+	"Purchase Receipt": "gatepass_management.utils.dashboards.get_purchase_receipt_dashboard",
+	"Subcontracting Receipt": "gatepass_management.utils.dashboards.get_subcontracting_receipt_dashboard",
+	"Stock Entry": "gatepass_management.utils.dashboards.get_stock_entry_dashboard",
+	"Delivery Note": "gatepass_management.utils.dashboards.get_delivery_note_dashboard",
+	"Sales Invoice": "gatepass_management.utils.dashboards.get_sales_invoice_dashboard",
 }
 
 # ---------------------------------------------------------------------------

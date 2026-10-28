@@ -14,6 +14,7 @@ class GatePassSettings(Document):
 		self._validate_field_rules()
 		self._validate_tracking_template()
 		self._apply_naming_series()
+		self._apply_feature_visibility()
 
 	def on_update(self):
 		frappe.clear_cache(doctype="Gate Pass")
@@ -64,6 +65,35 @@ class GatePassSettings(Document):
 			"Gate Pass", "naming_series", "options", "\n".join(series), "Text",
 			validate_fields_for_doctype=False,
 		)
+
+	def _apply_feature_visibility(self):
+		"""Hide the sections a disabled feature owns.
+
+		Several Features switches only ever gated validation, so turning one off
+		left its fields on the form with nothing behind them — the operator still
+		saw a Discrepancy section on a flow where discrepancies were switched
+		off. A Property Setter is used rather than `depends_on` because these are
+		site-wide decisions, not per-document ones, and the field should not
+		reappear when some other value on the form changes.
+		"""
+		from frappe.custom.doctype.property_setter.property_setter import make_property_setter
+
+		hidden_by_feature = {
+			# section/field            : the setting that must be on for it to show
+			("Gate Pass", "sb_discrepancy"): "enable_discrepancy",
+			("Gate Pass Item", "sb_disc"): "enable_discrepancy",
+			("Gate Pass Item", "sb_disc2"): "enable_discrepancy",
+			("Gate Pass", "sb_charges"): "enable_charges",
+			("Gate Pass", "sb_weight"): "enable_weighbridge",
+			("Gate Pass", "sb_returnable"): "enable_returnable",
+			("Gate Pass", "sb_compliance"): "enable_compliance_checks",
+		}
+
+		for (doctype, fieldname), setting in hidden_by_feature.items():
+			make_property_setter(
+				doctype, fieldname, "hidden", 0 if self.get(setting) else 1, "Check",
+				validate_fields_for_doctype=False,
+			)
 
 
 @frappe.whitelist()
