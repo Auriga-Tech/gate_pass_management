@@ -15,7 +15,7 @@ from frappe import _
 from frappe.utils import cint, flt, get_link_to_form, now_datetime, today
 
 from gatepass_management import ledger
-from gatepass_management.gate_pass.doctype.gate_pass_event_log.api import log_event
+from gatepass_management.gate_pass_management.doctype.gate_pass_event_log.api import log_event
 from gatepass_management.utils import guards
 from gatepass_management.utils.logger import get_logger
 

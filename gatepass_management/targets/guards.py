@@ -14,7 +14,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt, get_link_to_form
 
-from gatepass_management.gate_pass.doctype.gate_pass_event_log.api import log_event
+from gatepass_management.gate_pass_management.doctype.gate_pass_event_log.api import log_event
 from gatepass_management.rules.engine import RuleContext
 from gatepass_management.utils import guards
 
@@ -307,7 +307,7 @@ def _remove_references(doc):
 
 
 def _sync_gate_pass(gate_pass: str):
-	from gatepass_management.gate_pass.doctype.gate_pass.gate_pass import (
+	from gatepass_management.gate_pass_management.doctype.gate_pass.gate_pass import (
 		compute_per_processed,
 		derive_status,
 	)

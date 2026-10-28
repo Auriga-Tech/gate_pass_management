@@ -20,7 +20,7 @@ import frappe
 from frappe import _
 from frappe.utils import get_link_to_form
 
-from gatepass_management.gate_pass.doctype.gate_pass_event_log.api import log_event
+from gatepass_management.gate_pass_management.doctype.gate_pass_event_log.api import log_event
 from gatepass_management.utils.logger import get_logger, log_failure
 
 _state = threading.local()

@@ -1,0 +1,803 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-08-05 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sb_master",
+  "enabled",
+  "enforcement_preset",
+  "cb_master",
+  "enforce_from_date",
+  "company",
+  "sb_naming",
+  "naming_series",
+  "separate_series_by_direction",
+  "cb_naming",
+  "naming_series_in",
+  "naming_series_out",
+  "sb_dating",
+  "allow_backdated",
+  "backdate_limit_days",
+  "cb_dating",
+  "allow_future_dated",
+  "futuredate_limit_days",
+  "sb_party",
+  "allowed_party_types",
+  "default_party_type",
+  "allow_gate_pass_without_party",
+  "cb_party",
+  "allow_gate_pass_without_items",
+  "allow_non_stock_items",
+  "sb_required",
+  "require_location",
+  "require_gate",
+  "require_vehicle",
+  "require_driver",
+  "cb_required",
+  "require_reference_no",
+  "require_packaging_check",
+  "require_documentation_check",
+  "require_vehicle_photo",
+  "sb_features",
+  "enable_returnable",
+  "enable_discrepancy",
+  "enable_compliance_checks",
+  "enable_charges",
+  "enable_valuation",
+  "cb_features",
+  "enable_weighbridge",
+  "enable_batch_serial",
+  "enable_cost_center",
+  "enable_qr_code",
+  "enable_mobile_console",
+  "enable_packages",
+  "sb_tracking",
+  "enable_tracking_id",
+  "tracking_id_unique",
+  "cb_tracking",
+  "tracking_id_template",
+  "tracking_id_inherit_field",
+  "sb_returnable",
+  "default_return_days",
+  "auto_close_on_full_return",
+  "cb_returnable",
+  "overdue_reminder_days_before",
+  "overdue_escalation_roles",
+  "sb_discrepancy",
+  "allow_post_submit_discrepancy",
+  "post_submit_discrepancy_roles",
+  "cb_discrepancy",
+  "discrepancy_escalation_pct",
+  "default_rejected_warehouse",
+  "sb_compliance",
+  "block_on_provider_failure",
+  "compliance_staleness_minutes",
+  "cb_compliance",
+  "compliance_override_roles",
+  "show_compliance_on_print",
+  "sb_automation",
+  "enable_auto_draft_creation",
+  "auto_draft_notify",
+  "cb_automation",
+  "auto_draft_expiry_days",
+  "sb_lifecycle",
+  "cancellation_policy",
+  "allow_amend",
+  "cb_lifecycle",
+  "lock_attachments_on_submit",
+  "attachment_unlock_roles",
+  "timestamp_edit_roles",
+  "sb_permissions",
+  "restrict_by_source_role",
+  "restrict_by_location",
+  "cb_permissions",
+  "restrict_by_gate",
+  "restrict_by_company",
+  "sb_notify",
+  "notify_on_submit",
+  "notify_roles",
+  "notify_on_block",
+  "cb_notify",
+  "notify_overdue_returns",
+  "email_template",
+  "enable_whatsapp",
+  "sb_rules",
+  "rules_intro",
+  "rules",
+  "sb_field_rules",
+  "field_rules_intro",
+  "field_rules",
+  "sb_charge_types",
+  "charge_types",
+  "sb_advanced",
+  "ledger_lock_timeout_seconds",
+  "log_level",
+  "cb_advanced",
+  "event_log_retention_days",
+  "enable_api_rate_limit"
+ ],
+ "fields": [
+  {
+   "fieldname": "sb_master",
+   "fieldtype": "Section Break",
+   "label": "Gate Pass"
+  },
+  {
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled",
+   "default": "1",
+   "bold": 1,
+   "description": "Master switch. When off, this app is completely inert: no validation, no blocking, no side effects on any ERPNext document."
+  },
+  {
+   "fieldname": "enforcement_preset",
+   "fieldtype": "Select",
+   "label": "Enforcement Preset",
+   "options": "Advisory\nBalanced\nStrict\nCustom",
+   "default": "Advisory",
+   "bold": 1,
+   "description": "Advisory: everything warns, nothing blocks — the safe way to start. Balanced: data quality blocks, quantity warns. Strict: everything blocks. Editing any rule below switches this to Custom. Statutory compliance rules always block regardless of preset."
+  },
+  {
+   "fieldname": "cb_master",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "enforce_from_date",
+   "fieldtype": "Date",
+   "label": "Enforce From Date",
+   "description": "Gate pass rules apply only to documents dated on or after this date. Leave blank to apply to everything."
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Default Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "sb_naming",
+   "fieldtype": "Section Break",
+   "label": "Naming",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Small Text",
+   "label": "Naming Series",
+   "default": "GP-.YYYY.-"
+  },
+  {
+   "fieldname": "separate_series_by_direction",
+   "fieldtype": "Check",
+   "label": "Separate Series by Direction",
+   "description": "Use GP-IN-.YYYY.- and GP-OUT-.YYYY.- instead of one series."
+  },
+  {
+   "fieldname": "cb_naming",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "naming_series_in",
+   "fieldtype": "Data",
+   "label": "Inward Series",
+   "default": "GP-IN-.YYYY.-",
+   "depends_on": "separate_series_by_direction"
+  },
+  {
+   "fieldname": "naming_series_out",
+   "fieldtype": "Data",
+   "label": "Outward Series",
+   "default": "GP-OUT-.YYYY.-",
+   "depends_on": "separate_series_by_direction"
+  },
+  {
+   "fieldname": "sb_dating",
+   "fieldtype": "Section Break",
+   "label": "Dating",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "allow_backdated",
+   "fieldtype": "Check",
+   "label": "Allow Backdated Gate Passes",
+   "default": "1"
+  },
+  {
+   "fieldname": "backdate_limit_days",
+   "fieldtype": "Int",
+   "label": "Backdate Limit (Days)",
+   "default": "7",
+   "depends_on": "allow_backdated"
+  },
+  {
+   "fieldname": "cb_dating",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "allow_future_dated",
+   "fieldtype": "Check",
+   "label": "Allow Future Dated Gate Passes"
+  },
+  {
+   "fieldname": "futuredate_limit_days",
+   "fieldtype": "Int",
+   "label": "Future Limit (Days)",
+   "default": "0",
+   "depends_on": "allow_future_dated"
+  },
+  {
+   "fieldname": "sb_party",
+   "fieldtype": "Section Break",
+   "label": "Party & Items",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "allowed_party_types",
+   "fieldtype": "Table MultiSelect",
+   "label": "Allowed Party Types",
+   "options": "Gate Pass Allowed Party Type"
+  },
+  {
+   "fieldname": "default_party_type",
+   "fieldtype": "Link",
+   "label": "Default Party Type",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "allow_gate_pass_without_party",
+   "fieldtype": "Check",
+   "label": "Allow Gate Pass Without Party"
+  },
+  {
+   "fieldname": "cb_party",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "allow_gate_pass_without_items",
+   "fieldtype": "Check",
+   "label": "Allow Gate Pass Without Items",
+   "description": "Needed for visitor and vehicle-only passes."
+  },
+  {
+   "fieldname": "allow_non_stock_items",
+   "fieldtype": "Check",
+   "label": "Allow Free-Text Items",
+   "default": "1",
+   "description": "Lets the gate record tools, documents, scrap and samples that have no Item master."
+  },
+  {
+   "fieldname": "sb_required",
+   "fieldtype": "Section Break",
+   "label": "Required Fields",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "require_location",
+   "fieldtype": "Check",
+   "label": "Location"
+  },
+  {
+   "fieldname": "require_gate",
+   "fieldtype": "Check",
+   "label": "Gate"
+  },
+  {
+   "fieldname": "require_vehicle",
+   "fieldtype": "Check",
+   "label": "Vehicle Number",
+   "default": "1"
+  },
+  {
+   "fieldname": "require_driver",
+   "fieldtype": "Check",
+   "label": "Driver Name",
+   "default": "1"
+  },
+  {
+   "fieldname": "cb_required",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "require_reference_no",
+   "fieldtype": "Check",
+   "label": "Reference Number"
+  },
+  {
+   "fieldname": "require_packaging_check",
+   "fieldtype": "Check",
+   "label": "Packaging Condition"
+  },
+  {
+   "fieldname": "require_documentation_check",
+   "fieldtype": "Check",
+   "label": "Documentation Status"
+  },
+  {
+   "fieldname": "require_vehicle_photo",
+   "fieldtype": "Check",
+   "label": "Vehicle Photo"
+  },
+  {
+   "fieldname": "sb_features",
+   "fieldtype": "Section Break",
+   "label": "Features",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "enable_returnable",
+   "fieldtype": "Check",
+   "label": "Returnable Gate Passes",
+   "default": "1"
+  },
+  {
+   "fieldname": "enable_discrepancy",
+   "fieldtype": "Check",
+   "label": "Discrepancy Capture",
+   "default": "1"
+  },
+  {
+   "fieldname": "enable_compliance_checks",
+   "fieldtype": "Check",
+   "label": "Statutory Compliance Checks",
+   "default": "1"
+  },
+  {
+   "fieldname": "enable_charges",
+   "fieldtype": "Check",
+   "label": "Charges"
+  },
+  {
+   "fieldname": "enable_valuation",
+   "fieldtype": "Check",
+   "label": "Show Rate and Amount"
+  },
+  {
+   "fieldname": "cb_features",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "enable_weighbridge",
+   "fieldtype": "Check",
+   "label": "Weighbridge Fields"
+  },
+  {
+   "fieldname": "enable_batch_serial",
+   "fieldtype": "Check",
+   "label": "Batch and Serial"
+  },
+  {
+   "fieldname": "enable_cost_center",
+   "fieldtype": "Check",
+   "label": "Cost Center"
+  },
+  {
+   "fieldname": "enable_qr_code",
+   "fieldtype": "Check",
+   "label": "QR Code on Print",
+   "default": "1"
+  },
+  {
+   "fieldname": "enable_mobile_console",
+   "fieldtype": "Check",
+   "label": "Mobile Gate Console",
+   "default": "1"
+  },
+  {
+   "fieldname": "enable_packages",
+   "fieldtype": "Check",
+   "label": "Package Count"
+  },
+  {
+   "fieldname": "sb_tracking",
+   "fieldtype": "Section Break",
+   "label": "Tracking ID",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "enable_tracking_id",
+   "fieldtype": "Check",
+   "label": "Enable Tracking ID"
+  },
+  {
+   "fieldname": "tracking_id_unique",
+   "fieldtype": "Check",
+   "label": "Must Be Unique",
+   "depends_on": "enable_tracking_id"
+  },
+  {
+   "fieldname": "cb_tracking",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "tracking_id_template",
+   "fieldtype": "Code",
+   "label": "Template (Jinja)",
+   "default": "{{ party_code }}/{{ reference_no }}",
+   "depends_on": "enable_tracking_id",
+   "description": "Rendered once when the gate pass is created, then frozen. Available: party_code, party, reference_no, vehicle_number, posting_date."
+  },
+  {
+   "fieldname": "tracking_id_inherit_field",
+   "fieldtype": "Data",
+   "label": "Inherit From Source Field",
+   "depends_on": "enable_tracking_id",
+   "description": "Fieldname on the source document to copy instead of rendering the template."
+  },
+  {
+   "fieldname": "sb_returnable",
+   "fieldtype": "Section Break",
+   "label": "Returnable",
+   "collapsible": 1,
+   "depends_on": "enable_returnable"
+  },
+  {
+   "fieldname": "default_return_days",
+   "fieldtype": "Int",
+   "label": "Default Return Window (Days)",
+   "default": "7"
+  },
+  {
+   "fieldname": "auto_close_on_full_return",
+   "fieldtype": "Check",
+   "label": "Close Automatically on Full Return",
+   "default": "1"
+  },
+  {
+   "fieldname": "cb_returnable",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "overdue_reminder_days_before",
+   "fieldtype": "Int",
+   "label": "Remind Days Before Due",
+   "default": "1"
+  },
+  {
+   "fieldname": "overdue_escalation_roles",
+   "fieldtype": "Table MultiSelect",
+   "label": "Escalate Overdue To",
+   "options": "Gate Pass Role"
+  },
+  {
+   "fieldname": "sb_discrepancy",
+   "fieldtype": "Section Break",
+   "label": "Discrepancy",
+   "collapsible": 1,
+   "depends_on": "enable_discrepancy"
+  },
+  {
+   "fieldname": "allow_post_submit_discrepancy",
+   "fieldtype": "Check",
+   "label": "Allow Recording After Submit",
+   "default": "1",
+   "description": "Damage is usually found while unloading, after the pass is submitted. Changes are role-gated, require a reason, and are fully audited."
+  },
+  {
+   "fieldname": "post_submit_discrepancy_roles",
+   "fieldtype": "Table MultiSelect",
+   "label": "Who May Record After Submit",
+   "options": "Gate Pass Role",
+   "depends_on": "allow_post_submit_discrepancy"
+  },
+  {
+   "fieldname": "cb_discrepancy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "discrepancy_escalation_pct",
+   "fieldtype": "Percent",
+   "label": "Escalate Above (% of consignment)",
+   "default": "10"
+  },
+  {
+   "fieldname": "default_rejected_warehouse",
+   "fieldtype": "Link",
+   "label": "Default Rejected Warehouse",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "sb_compliance",
+   "fieldtype": "Section Break",
+   "label": "Compliance",
+   "collapsible": 1,
+   "depends_on": "enable_compliance_checks"
+  },
+  {
+   "fieldname": "block_on_provider_failure",
+   "fieldtype": "Check",
+   "label": "Block When a Provider Cannot Be Reached",
+   "default": "1",
+   "description": "Fails closed. An app that lets dispatches through whenever an API is down is not a control."
+  },
+  {
+   "fieldname": "compliance_staleness_minutes",
+   "fieldtype": "Int",
+   "label": "Re-check If Older Than (Minutes)",
+   "default": "10"
+  },
+  {
+   "fieldname": "cb_compliance",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "compliance_override_roles",
+   "fieldtype": "Table MultiSelect",
+   "label": "Who May Override Compliance",
+   "options": "Gate Pass Role"
+  },
+  {
+   "fieldname": "show_compliance_on_print",
+   "fieldtype": "Check",
+   "label": "Print Compliance Numbers on Gate Slip",
+   "default": "1"
+  },
+  {
+   "fieldname": "sb_automation",
+   "fieldtype": "Section Break",
+   "label": "Automation",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "enable_auto_draft_creation",
+   "fieldtype": "Check",
+   "label": "Auto-Create Draft Gate Passes",
+   "default": "1",
+   "description": "When a source document configured for it is submitted, a draft gate pass appears in the gate's worklist needing only vehicle and driver. Turns 'create from scratch' into 'complete and confirm'."
+  },
+  {
+   "fieldname": "auto_draft_notify",
+   "fieldtype": "Check",
+   "label": "Notify on Auto-Created Draft",
+   "default": "1"
+  },
+  {
+   "fieldname": "cb_automation",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "auto_draft_expiry_days",
+   "fieldtype": "Int",
+   "label": "Cancel Unclaimed Drafts After (Days)",
+   "default": "7"
+  },
+  {
+   "fieldname": "sb_lifecycle",
+   "fieldtype": "Section Break",
+   "label": "Lifecycle",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "cancellation_policy",
+   "fieldtype": "Select",
+   "label": "Cancellation Policy",
+   "options": "Block if Linked Documents Exist\nCascade Cancel Targets\nAllow and Unlink",
+   "default": "Block if Linked Documents Exist",
+   "description": "Cascade silently reverses stock ledger entries; Block is the safer default."
+  },
+  {
+   "fieldname": "allow_amend",
+   "fieldtype": "Check",
+   "label": "Allow Amend",
+   "default": "1"
+  },
+  {
+   "fieldname": "cb_lifecycle",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "lock_attachments_on_submit",
+   "fieldtype": "Check",
+   "label": "Lock Attachments After Submit",
+   "default": "1"
+  },
+  {
+   "fieldname": "attachment_unlock_roles",
+   "fieldtype": "Table MultiSelect",
+   "label": "Who May Remove Locked Attachments",
+   "options": "Gate Pass Role"
+  },
+  {
+   "fieldname": "timestamp_edit_roles",
+   "fieldtype": "Table MultiSelect",
+   "label": "Who May Amend Entry/Exit Times",
+   "options": "Gate Pass Role",
+   "description": "Post-submit timestamp changes always require a reason and are always audited."
+  },
+  {
+   "fieldname": "sb_permissions",
+   "fieldtype": "Section Break",
+   "label": "Access Restrictions",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "restrict_by_source_role",
+   "fieldtype": "Check",
+   "label": "Restrict by Source Type Role",
+   "description": "Users only see gate passes whose source type their roles allow."
+  },
+  {
+   "fieldname": "restrict_by_location",
+   "fieldtype": "Check",
+   "label": "Restrict by Location"
+  },
+  {
+   "fieldname": "cb_permissions",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "restrict_by_gate",
+   "fieldtype": "Check",
+   "label": "Restrict by Gate"
+  },
+  {
+   "fieldname": "restrict_by_company",
+   "fieldtype": "Check",
+   "label": "Restrict by Company",
+   "default": "1"
+  },
+  {
+   "fieldname": "sb_notify",
+   "fieldtype": "Section Break",
+   "label": "Notifications",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "notify_on_submit",
+   "fieldtype": "Check",
+   "label": "Notify on Submit"
+  },
+  {
+   "fieldname": "notify_roles",
+   "fieldtype": "Table MultiSelect",
+   "label": "Notify Roles",
+   "options": "Gate Pass Role"
+  },
+  {
+   "fieldname": "notify_on_block",
+   "fieldtype": "Check",
+   "label": "Notify When a Gate Pass Is Blocked"
+  },
+  {
+   "fieldname": "cb_notify",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "notify_overdue_returns",
+   "fieldtype": "Check",
+   "label": "Notify Overdue Returns",
+   "default": "1"
+  },
+  {
+   "fieldname": "email_template",
+   "fieldtype": "Link",
+   "label": "Email Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "enable_whatsapp",
+   "fieldtype": "Check",
+   "label": "Send via WhatsApp",
+   "description": "Active only when the frappe_whatsapp app is installed."
+  },
+  {
+   "fieldname": "sb_rules",
+   "fieldtype": "Section Break",
+   "label": "Rules"
+  },
+  {
+   "fieldname": "rules_intro",
+   "fieldtype": "HTML",
+   "options": "<p class='text-muted'>Every rule below can Block, Warn, or be Ignored. Set a preset above for a baseline, then tune individual rules. Rules can also be overridden per flow on Gate Pass Source, and relaxed for specific roles using Bypass Roles.</p>"
+  },
+  {
+   "fieldname": "rules",
+   "fieldtype": "Table",
+   "label": "Rules",
+   "options": "Gate Pass Rule"
+  },
+  {
+   "fieldname": "sb_field_rules",
+   "fieldtype": "Section Break",
+   "label": "Field Rules",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "field_rules_intro",
+   "fieldtype": "HTML",
+   "options": "<p class='text-muted'>Make any field mandatory, hidden, or read-only — optionally only for one direction, gate pass type, or source flow.</p>"
+  },
+  {
+   "fieldname": "field_rules",
+   "fieldtype": "Table",
+   "label": "Field Rules",
+   "options": "Gate Pass Field Rule"
+  },
+  {
+   "fieldname": "sb_charge_types",
+   "fieldtype": "Section Break",
+   "label": "Charge Types",
+   "collapsible": 1,
+   "depends_on": "enable_charges"
+  },
+  {
+   "fieldname": "charge_types",
+   "fieldtype": "Table",
+   "label": "Charge Types",
+   "options": "Gate Pass Charge Type"
+  },
+  {
+   "fieldname": "sb_advanced",
+   "fieldtype": "Section Break",
+   "label": "Advanced",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "ledger_lock_timeout_seconds",
+   "fieldtype": "Int",
+   "label": "Ledger Lock Timeout (Seconds)",
+   "default": "30",
+   "description": "How long to wait for another user's transaction before giving up with a clear message."
+  },
+  {
+   "fieldname": "log_level",
+   "fieldtype": "Select",
+   "label": "Log Level",
+   "options": "Errors Only\nStandard\nVerbose",
+   "default": "Standard"
+  },
+  {
+   "fieldname": "cb_advanced",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "event_log_retention_days",
+   "fieldtype": "Int",
+   "label": "Event Log Retention (Days)",
+   "default": "0",
+   "description": "0 keeps events forever. The event log is the audit trail."
+  },
+  {
+   "fieldname": "enable_api_rate_limit",
+   "fieldtype": "Check",
+   "label": "Rate-Limit Public Scan Endpoints",
+   "default": "1"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-08-05 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Gate Pass Management",
+ "name": "Gate Pass Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "Gate Pass Manager",
+   "read": 1,
+   "write": 1,
+   "report": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "report": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "issingle": 1,
+ "track_changes": 1
+}

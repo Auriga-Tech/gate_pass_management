@@ -1,0 +1,21 @@
+{
+ "aggregate_function_based_on": null,
+ "creation": "2026-08-06 10:00:00.000000",
+ "doctype": "Number Card",
+ "document_type": "Gate Pass",
+ "dynamic_filters_json": "[]",
+ "filters_json": "[[\"Gate Pass\", \"docstatus\", \"=\", 1], [\"Gate Pass\", \"direction\", \"=\", \"In\"], [\"Gate Pass\", \"posting_date\", \"=\", \"Today\"]]",
+ "function": "Count",
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "In Today",
+ "modified": "2026-08-07 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Gate Pass Management",
+ "name": "Gate Pass Today In",
+ "owner": "Administrator",
+ "show_percentage_stats": 0,
+ "stats_time_interval": "Daily",
+ "type": "Document Type",
+ "color": "#29CD42"
+}

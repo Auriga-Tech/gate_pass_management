@@ -1,0 +1,68 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-08-05 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "charge_type",
+  "is_mandatory",
+  "amount",
+  "paid_by",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "charge_type",
+   "fieldtype": "Data",
+   "label": "Charge",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 3
+  },
+  {
+   "fieldname": "is_mandatory",
+   "fieldtype": "Check",
+   "label": "Required",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount",
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "paid_by",
+   "fieldtype": "Select",
+   "label": "Paid By",
+   "options": "Company\nParty\nTransporter",
+   "default": "Company",
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-08-05 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Gate Pass Management",
+ "name": "Gate Pass Charge",
+ "owner": "Administrator",
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1,
+ "permissions": [],
+ "track_changes": 1
+}

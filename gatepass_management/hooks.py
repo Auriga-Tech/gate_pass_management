@@ -86,7 +86,7 @@ doc_events = {
 		"on_submit": "gatepass_management.sources.automation.auto_create_draft",
 	},
 	"File": {
-		"on_trash": "gatepass_management.gate_pass.doctype.gate_pass.attachments.prevent_delete_on_submit",
+		"on_trash": "gatepass_management.gate_pass_management.doctype.gate_pass.attachments.prevent_delete_on_submit",
 	},
 }
 
@@ -135,9 +135,9 @@ gate_pass_compliance_providers = [
 
 scheduler_events = {
 	"daily": [
-		"gatepass_management.gate_pass.doctype.gate_pass.scheduler.flag_overdue_returns",
-		"gatepass_management.gate_pass.doctype.gate_pass.scheduler.refresh_statuses",
-		"gatepass_management.gate_pass.doctype.gate_pass_event_log.retention.purge_expired",
+		"gatepass_management.gate_pass_management.doctype.gate_pass.scheduler.flag_overdue_returns",
+		"gatepass_management.gate_pass_management.doctype.gate_pass.scheduler.refresh_statuses",
+		"gatepass_management.gate_pass_management.doctype.gate_pass_event_log.retention.purge_expired",
 		"gatepass_management.sources.automation.expire_unclaimed_drafts",
 	],
 }

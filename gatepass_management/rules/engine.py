@@ -233,7 +233,7 @@ class RuleContext:
 		if not self.warnings:
 			return
 
-		from gatepass_management.gate_pass.doctype.gate_pass_event_log.api import log_event
+		from gatepass_management.gate_pass_management.doctype.gate_pass_event_log.api import log_event
 
 		for v in self.warnings:
 			self.logger.info(
