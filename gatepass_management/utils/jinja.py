@@ -28,14 +28,33 @@ def get_qr_code(gate_pass: str) -> str:
 		return ""
 	from frappe.utils.data import get_absolute_url
 
-	try:
-		import io
-		from base64 import b64encode
+	import io
+	from base64 import b64encode
 
+	buffer = io.BytesIO()
+	try:
 		import pyqrcode
 
-		buffer = io.BytesIO()
 		pyqrcode.create(gate_pass).png(buffer, scale=4, quiet_zone=1)
-		return f"data:image/png;base64,{b64encode(buffer.getvalue()).decode()}"
 	except Exception:
-		return ""
+		try:
+			import qrcode
+
+			qrcode.make(gate_pass).save(buffer, format="PNG")
+		except Exception as exc:
+			# A blank space where the QR should be tells nobody anything, and the
+			# slip is what the driver carries. Say why it is missing.
+			from gatepass_management.utils.logger import get_logger
+
+			get_logger().warning(
+				"qr_code_failed", extra={"gate_pass": gate_pass, "error": str(exc)}
+			)
+			frappe.log_error(
+				title="Gate Pass: QR code could not be generated",
+				message=f"Install pyqrcode+pypng or qrcode.\n\n{frappe.get_traceback()}",
+				reference_doctype="Gate Pass",
+				reference_name=gate_pass,
+			)
+			return ""
+
+	return f"data:image/png;base64,{b64encode(buffer.getvalue()).decode()}"
