@@ -422,3 +422,75 @@ def _require_role(settings_field: str, action: str):
 			),
 			frappe.PermissionError,
 		)
+
+
+# ------------------------------------------------------- target form support
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def gate_pass_query(doctype, txt, searchfield, start, page_len, filters):
+	"""Gate passes a given target document can still draw from.
+
+	Only submitted passes whose flow produces this target, and only those with
+	something left to process — offering a fully-processed pass just produces a
+	refusal one click later.
+	"""
+	filters = filters or {}
+	target_doctype = filters.get("target_doctype")
+	party = filters.get("party")
+
+	GP = frappe.qb.DocType("Gate Pass")
+	GPS = frappe.qb.DocType("Gate Pass Source")
+
+	query = (
+		frappe.qb.from_(GP)
+		.inner_join(GPS)
+		.on(GPS.name == GP.source_type)
+		.select(GP.name, GP.party, GP.posting_date)
+		.where(GP.docstatus == 1)
+		.where(GP.per_processed < 100)
+		.where(GP.name.like(f"%{txt}%"))
+		.orderby(GP.posting_date)
+		.limit(page_len)
+		.offset(start)
+	)
+	if target_doctype:
+		query = query.where(GPS.target_doctype == target_doctype)
+	if party:
+		query = query.where(GP.party == party)
+
+	return query.run()
+
+
+@frappe.whitelist()
+def target_requirement(target_doctype: str) -> dict:
+	"""Whether this target needs a gate pass, for the notice on its form.
+
+	Mirrors what `targets.guards` enforces, so the form says the same thing the
+	server will. Reports the resolved rule action too, since a requirement set
+	to Warn is advice and one set to Block is a wall.
+	"""
+	from gatepass_management.rules.engine import RuleContext
+	from gatepass_management.utils import guards
+
+	if not guards.is_enabled():
+		return {"requirement": "Not Required", "blocking": False}
+
+	names = frappe.get_all(
+		"Gate Pass Source",
+		filters={"target_doctype": target_doctype, "enabled": 1},
+		fields=["name", "enforce_on_target", "block_native_target_button"],
+		limit=1,
+	)
+	if not names:
+		return {"requirement": "Not Required", "blocking": False}
+
+	config = frappe.get_cached_doc("Gate Pass Source", names[0].name)
+	requirement = config.enforce_on_target or "Not Required"
+	if config.block_native_target_button:
+		requirement = "Only Via Gate Pass"
+
+	ctx = RuleContext(frappe._dict({"doctype": target_doctype}), config)
+	code = "TGT-BLOCK-NATIVE" if config.block_native_target_button else "TGT-REQUIRED"
+	return {"requirement": requirement, "blocking": ctx.resolve_action(code) in ("Block", "Hard")}

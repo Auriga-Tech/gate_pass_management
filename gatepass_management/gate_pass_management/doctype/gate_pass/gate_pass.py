@@ -35,6 +35,8 @@ class GatePass(Document):
 		self._seed_charges()
 
 	def validate(self):
+		self._check_amend_allowed()
+		self._apply_party_defaults()
 		self._derive_direction()
 		self._resolve_party()
 		self._apply_qty_policy()
@@ -59,6 +61,10 @@ class GatePass(Document):
 		self.db_set("status", self.status, update_modified=False)
 		self._sync_returnable_origin()
 		self._create_auto_target()
+
+		from gatepass_management.utils import notify
+
+		notify.on_gate_pass_submit(self)
 
 	def before_cancel(self):
 		self._check_cancellation_policy()
@@ -214,7 +220,13 @@ class GatePass(Document):
 		origin.db_set("actual_return_date", last_date if returned else None, update_modified=False)
 		origin.reload()
 		origin.db_set("return_status", derive_return_status(origin), update_modified=False)
-		origin.db_set("status", derive_status(origin), update_modified=False)
+		origin.reload()
+		status = derive_status(origin)
+		# `auto_close_on_full_return`: a fully returned pass is finished business,
+		# so close it rather than leaving it on the Pending Returnable report.
+		if status == "Returned" and cint(guards.get_settings().auto_close_on_full_return):
+			status = "Closed"
+		origin.db_set("status", status, update_modified=False)
 
 		from gatepass_management.gate_pass_management.doctype.gate_pass_event_log.api import log_event
 
@@ -275,6 +287,28 @@ class GatePass(Document):
 		elif not documents:
 			self.source_document = None
 
+	def _apply_party_defaults(self):
+		"""`default_party_type` and `allow_gate_pass_without_party` were both inert."""
+		settings = guards.get_settings()
+		if not self.party_type and settings.default_party_type:
+			self.party_type = settings.default_party_type
+		if not self.party and not cint(settings.allow_gate_pass_without_party):
+			if self.gate_pass_type not in ("Visitor", "Vehicle Only"):
+				frappe.throw(
+					_("Select a Party. Gate passes without a party are disabled in "
+					  "Gate Pass Settings."),
+					title=_("Party required"),
+				)
+
+	def _check_amend_allowed(self):
+		"""`allow_amend` shipped in Settings and nothing read it."""
+		if self.amended_from and not cint(guards.get_settings().allow_amend):
+			frappe.throw(
+				_("Amending a Gate Pass is disabled in Gate Pass Settings. "
+				  "Create a new one instead."),
+				title=_("Amend not allowed"),
+			)
+
 	def _resolve_party(self):
 		if self.party_type and self.party:
 			meta = frappe.get_meta(self.party_type)
@@ -327,7 +361,10 @@ class GatePass(Document):
 		self.total_damaged_qty = sum(flt(r.damaged_qty) for r in self.items)
 		self.total_rejected_qty = sum(flt(r.rejected_qty) for r in self.items)
 		self.total_amount = sum(flt(r.amount) for r in self.items)
-		self.total_packages = sum(cint(r.packages) for r in self.items)
+		settings = guards.get_settings()
+		self.total_packages = (
+			sum(cint(r.packages) for r in self.items) if cint(settings.enable_packages) else 0
+		)
 		self.total_charges = sum(flt(c.amount) for c in self.charges)
 
 		self.has_discrepancy = 1 if (

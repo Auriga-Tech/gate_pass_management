@@ -20,10 +20,8 @@
   "naming_series_out",
   "sb_dating",
   "allow_backdated",
-  "backdate_limit_days",
   "cb_dating",
   "allow_future_dated",
-  "futuredate_limit_days",
   "sb_party",
   "allowed_party_types",
   "default_party_type",
@@ -31,6 +29,7 @@
   "cb_party",
   "allow_gate_pass_without_items",
   "allow_non_stock_items",
+  "group_by_fields",
   "sb_required",
   "require_location",
   "require_gate",
@@ -52,7 +51,6 @@
   "enable_batch_serial",
   "enable_cost_center",
   "enable_qr_code",
-  "enable_mobile_console",
   "enable_packages",
   "sb_tracking",
   "enable_tracking_id",
@@ -70,11 +68,9 @@
   "allow_post_submit_discrepancy",
   "post_submit_discrepancy_roles",
   "cb_discrepancy",
-  "discrepancy_escalation_pct",
   "default_rejected_warehouse",
   "sb_compliance",
   "block_on_provider_failure",
-  "compliance_staleness_minutes",
   "cb_compliance",
   "compliance_override_roles",
   "show_compliance_on_print",
@@ -116,8 +112,7 @@
   "ledger_lock_timeout_seconds",
   "log_level",
   "cb_advanced",
-  "event_log_retention_days",
-  "enable_api_rate_limit"
+  "event_log_retention_days"
  ],
  "fields": [
   {
@@ -204,14 +199,8 @@
    "fieldname": "allow_backdated",
    "fieldtype": "Check",
    "label": "Allow Backdated Gate Passes",
-   "default": "1"
-  },
-  {
-   "fieldname": "backdate_limit_days",
-   "fieldtype": "Int",
-   "label": "Backdate Limit (Days)",
-   "default": "7",
-   "depends_on": "allow_backdated"
+   "default": "1",
+   "description": "How far back is set by the DOC-BACKDATE rule's Threshold, below."
   },
   {
    "fieldname": "cb_dating",
@@ -220,14 +209,8 @@
   {
    "fieldname": "allow_future_dated",
    "fieldtype": "Check",
-   "label": "Allow Future Dated Gate Passes"
-  },
-  {
-   "fieldname": "futuredate_limit_days",
-   "fieldtype": "Int",
-   "label": "Future Limit (Days)",
-   "default": "0",
-   "depends_on": "allow_future_dated"
+   "label": "Allow Future Dated Gate Passes",
+   "description": "How far ahead is set by the DOC-FUTUREDATE rule's Threshold, below."
   },
   {
    "fieldname": "sb_party",
@@ -268,6 +251,12 @@
    "label": "Allow Free-Text Items",
    "default": "1",
    "description": "Lets the gate record tools, documents, scrap and samples that have no Item master."
+  },
+  {
+   "fieldname": "group_by_fields",
+   "fieldtype": "Small Text",
+   "label": "Multi-Source Grouping Fields",
+   "description": "Comma separated fieldnames on the source document that every document on one Gate Pass must agree on, e.g. purchase_type. Leave blank to allow any mix. Enforced by the SRC-MIXED-GROUP rule."
   },
   {
    "fieldname": "sb_required",
@@ -381,12 +370,6 @@
    "default": "1"
   },
   {
-   "fieldname": "enable_mobile_console",
-   "fieldtype": "Check",
-   "label": "Mobile Gate Console",
-   "default": "1"
-  },
-  {
    "fieldname": "enable_packages",
    "fieldtype": "Check",
    "label": "Package Count"
@@ -488,12 +471,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "discrepancy_escalation_pct",
-   "fieldtype": "Percent",
-   "label": "Escalate Above (% of consignment)",
-   "default": "10"
-  },
-  {
    "fieldname": "default_rejected_warehouse",
    "fieldtype": "Link",
    "label": "Default Rejected Warehouse",
@@ -512,12 +489,6 @@
    "label": "Block When a Provider Cannot Be Reached",
    "default": "1",
    "description": "Fails closed. An app that lets dispatches through whenever an API is down is not a control."
-  },
-  {
-   "fieldname": "compliance_staleness_minutes",
-   "fieldtype": "Int",
-   "label": "Re-check If Older Than (Minutes)",
-   "default": "10"
   },
   {
    "fieldname": "cb_compliance",
@@ -759,17 +730,11 @@
    "label": "Event Log Retention (Days)",
    "default": "0",
    "description": "0 keeps events forever. The event log is the audit trail."
-  },
-  {
-   "fieldname": "enable_api_rate_limit",
-   "fieldtype": "Check",
-   "label": "Rate-Limit Public Scan Endpoints",
-   "default": "1"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-05 10:00:00.000000",
+ "modified": "2026-10-29 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "Gate Pass Management",
  "name": "Gate Pass Settings",

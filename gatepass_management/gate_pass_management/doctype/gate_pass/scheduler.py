@@ -144,3 +144,63 @@ def refresh_statuses():
 
 	if changed:
 		get_logger().info("statuses_refreshed", extra={"changed": changed, "scanned": len(names)})
+
+
+def flag_stale_drafts():
+	"""Surface drafts nobody has submitted.
+
+	A draft left open is material that physically moved with no record anyone
+	downstream can see, so it is worth chasing. Controlled by LIFE-STALE-DRAFT,
+	which ships Ignore because how long is too long is entirely site-specific.
+	"""
+	if not guards.is_enabled():
+		return
+
+	from gatepass_management.rules.engine import RuleContext
+
+	probe = frappe.new_doc("Gate Pass")
+	ctx = RuleContext(probe)
+	if not ctx.is_active("LIFE-STALE-DRAFT"):
+		return
+
+	days = cint(ctx.threshold("LIFE-STALE-DRAFT", 3))
+	if days <= 0:
+		return
+
+	cutoff = add_days(today(), -days)
+	stale = frappe.get_all(
+		"Gate Pass",
+		filters={"docstatus": 0, "modified": ["<", cutoff]},
+		fields=["name", "party", "posting_date", "owner"],
+	)
+	if not stale:
+		return
+
+	for gp in stale:
+		log_event(
+			gate_pass=gp.name,
+			event="Rule Warned",
+			rule_code="LIFE-STALE-DRAFT",
+			message=_("Still a draft {0} days after it was last touched.").format(days),
+		)
+
+	settings = guards.get_settings()
+	recipients = _recipients(settings)
+	if recipients:
+		body = "<ul>" + "".join(
+			f"<li>{frappe.utils.get_link_to_form('Gate Pass', g['name'])} — "
+			f"{frappe.utils.escape_html(str(g.get('party') or ''))}</li>"
+			for g in stale
+		) + "</ul>"
+		try:
+			frappe.sendmail(
+				recipients=recipients,
+				subject=_("{0} Gate Pass draft(s) left unsubmitted").format(len(stale)),
+				message=body,
+			)
+		except Exception:
+			frappe.log_error(
+				title="Gate Pass: stale draft notification failed", message=frappe.get_traceback()
+			)
+
+	get_logger().info("stale_drafts_flagged", extra={"count": len(stale), "days": days})

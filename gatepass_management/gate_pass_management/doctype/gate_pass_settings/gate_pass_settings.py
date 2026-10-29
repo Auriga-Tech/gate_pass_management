@@ -87,6 +87,15 @@ class GatePassSettings(Document):
 			("Gate Pass", "sb_weight"): "enable_weighbridge",
 			("Gate Pass", "sb_returnable"): "enable_returnable",
 			("Gate Pass", "sb_compliance"): "enable_compliance_checks",
+			("Gate Pass", "cost_center"): "enable_cost_center",
+			("Gate Pass", "security_officer"): "enable_security_officer",
+			("Gate Pass", "eway_bill_no"): "enable_eway_bill",
+			("Gate Pass", "total_amount"): "enable_valuation",
+			("Gate Pass Item", "sb_value"): "enable_valuation",
+			("Gate Pass Item", "packages"): "enable_packages",
+			("Gate Pass", "total_packages"): "enable_packages",
+			("Gate Pass Item", "batch_no"): "enable_batch_serial",
+			("Gate Pass Item", "serial_no"): "enable_batch_serial",
 		}
 
 		for (doctype, fieldname), setting in hidden_by_feature.items():

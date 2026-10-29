@@ -131,9 +131,11 @@ class RuleContext:
 		override = self._source_override(code)
 		if override.get("threshold") is not None:
 			return float(override["threshold"] or 0)
+
 		row = self._rule_row(code)
 		if row.get("threshold") is not None:
 			return float(row["threshold"] or 0)
+
 		rule = catalogue.get(code)
 		return float(rule.default_threshold or fallback)
 
@@ -200,6 +202,10 @@ class RuleContext:
 		self._record_warnings()
 		if not self.violations:
 			return
+
+		from gatepass_management.utils import notify
+
+		notify.on_rule_blocked(self.doc, self.violations)
 
 		if len(self.violations) == 1:
 			v = self.violations[0]

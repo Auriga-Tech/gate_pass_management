@@ -45,12 +45,48 @@ frappe.ui.form.on("Gate Pass", {
 	add_buttons(frm) {
 		if (frm.doc.docstatus === 0) {
 			frm.trigger("add_get_items_buttons");
+			frm.trigger("add_override_button");
 		}
 
 		if (frm.doc.docstatus === 1) {
 			frm.trigger("add_create_target_button");
 			frm.trigger("add_post_submit_buttons");
 		}
+	},
+
+	// A statutory check is blocking this pass. Someone senior can release it, on
+	// the record. Without this button the endpoint existed and nothing could
+	// reach it, so a blocked dispatch had no way forward at all.
+	add_override_button(frm) {
+		if (frm.is_new() || frm.doc.compliance_override_by) return;
+		if (!["Pending", "Failed"].includes(frm.doc.compliance_status)) return;
+
+		frm.add_custom_button(__("Override Compliance"), () => {
+			frappe.prompt(
+				[
+					{
+						fieldname: "reason",
+						fieldtype: "Small Text",
+						label: __("Why is this being released?"),
+						reqd: 1,
+						description: __(
+							"Recorded permanently against your name and shown in the " +
+								"Compliance Exceptions report."
+						),
+					},
+				],
+				({ reason }) => {
+					frappe.call({
+						method: "gatepass_management.api.gate_pass.override_compliance",
+						args: { gate_pass: frm.doc.name, reason },
+						freeze: true,
+						callback: () => frm.reload_doc(),
+					});
+				},
+				__("Override Compliance"),
+				__("Release")
+			);
+		}).addClass("btn-danger");
 	},
 
 	add_get_items_buttons(frm) {

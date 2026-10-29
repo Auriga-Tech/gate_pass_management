@@ -19,7 +19,17 @@ from __future__ import annotations
 
 import frappe
 from frappe import _
-from frappe.utils import add_days, flt, get_link_to_form, getdate, today
+from frappe.utils import (
+	add_days,
+	cint,
+	flt,
+	get_datetime,
+	get_link_to_form,
+	getdate,
+	now_datetime,
+	time_diff_in_seconds,
+	today,
+)
 
 from gatepass_management import ledger
 from gatepass_management.compliance.base import PROVIDER_UNAVAILABLE
@@ -31,6 +41,8 @@ def run(doc, ctx, at_submit: bool = False):
 	_party_and_source(doc, ctx)
 	_items(doc, ctx)
 	_discrepancy(doc, ctx)
+	_weight_variance(doc, ctx)
+	_mixed_grouping(doc, ctx)
 	_field_rules(doc, ctx)
 
 	if at_submit:
@@ -88,7 +100,8 @@ def _document(doc, ctx):
 				fieldname="posting_date",
 			)
 
-		future_days = int(ctx.threshold("DOC-FUTUREDATE", 0))
+		# `allow_future_dated` off means no future date at all, whatever the window says.
+		future_days = int(ctx.threshold("DOC-FUTUREDATE", 0)) if settings.allow_future_dated else 0
 		ctx.check(
 			"DOC-FUTUREDATE",
 			getdate(doc.posting_date) > getdate(add_days(today(), future_days)),
@@ -306,6 +319,11 @@ def _items(doc, ctx):
 		          _("Item is required. Tick 'Free Text Item' for goods with no Item master."),
 		          row_idx=idx, fieldname="item_code")
 
+		ctx.check("SRC-NONSTOCK-MIX",
+		          bool(row.is_non_stock) and not settings_allows_non_stock(ctx),
+		          _("Free-text items are disabled in Gate Pass Settings."),
+		          row_idx=idx, fieldname="is_non_stock")
+
 		ctx.check("ITEM-NAME-REQUIRED", bool(row.is_non_stock) and not row.item_name,
 		          _("Item Name is required for free-text items."),
 		          row_idx=idx, fieldname="item_name")
@@ -373,6 +391,10 @@ def _items(doc, ctx):
 
 
 # ------------------------------------------------------------ discrepancy
+
+
+def settings_allows_non_stock(ctx) -> bool:
+	return bool(guards.get_settings().allow_non_stock_items)
 
 
 def _discrepancy(doc, ctx):
@@ -616,6 +638,11 @@ def _compliance(doc, ctx):
 	if not config or not config.get("compliance_rules"):
 		return
 
+	# CMP-STALE: a check evaluated long before submit may no longer be true. The
+	# re-evaluation below is what keeps it honest, so the rule only has to decide
+	# whether a stale reading is worth complaining about on its own.
+	_compliance_staleness(doc, ctx, settings)
+
 	results = runner.evaluate(doc, config)
 	runner.sync_to_gate_pass(doc, results)
 
@@ -626,7 +653,16 @@ def _compliance(doc, ctx):
 		if not result or result.passed:
 			continue
 
-		code = "CMP-PROVIDER-DOWN" if result.status == PROVIDER_UNAVAILABLE else "CMP-REQUIRED"
+		unreachable = result.status == PROVIDER_UNAVAILABLE
+		code = "CMP-PROVIDER-DOWN" if unreachable else "CMP-REQUIRED"
+
+		# `block_on_provider_failure` off means an unverifiable check is a warning
+		# rather than a wall. It ships on: failing open is not a control.
+		if unreachable and not cint(settings.block_on_provider_failure):
+			ctx.warnings.append(
+				_violation(code, "Warn", _("{0}: {1}").format(
+					frappe.bold(result.label), result.message), result.remediation))
+			continue
 
 		# The compliance rule row carries its own action, which takes precedence
 		# over the global rule. A site can block on E-Way Bill while warning on
@@ -656,3 +692,99 @@ def _violation(code, action, message, remediation=""):
 	from gatepass_management.rules.engine import Violation
 
 	return Violation(code=code, action=action, message=message, remediation=remediation)
+
+
+def _compliance_staleness(doc, ctx, settings):
+	"""Warn when the compliance reading on screen is older than the configured window.
+
+	The check is re-run at submit regardless, so this never gates the pass. It
+	exists so an operator who has had the form open for an hour is told the
+	green ticks they are looking at were not current.
+	"""
+	minutes = cint(ctx.threshold("CMP-STALE", 10))
+	if not minutes or not doc.compliance_checked_on:
+		return
+
+	age = time_diff_in_seconds(now_datetime(), get_datetime(doc.compliance_checked_on)) / 60
+	ctx.check(
+		"CMP-STALE",
+		age > minutes,
+		_("Compliance was last checked {0} minutes ago; it is being re-checked now.").format(
+			cint(age)
+		),
+		fieldname="compliance_status",
+	)
+
+
+def _weight_variance(doc, ctx):
+	"""Net weight against what the items say they should weigh.
+
+	Only possible when every item carries a weight on the Item master; a single
+	blank makes the expected total meaningless, so the check stands down rather
+	than inventing a number.
+	"""
+	if not guards.get_settings().enable_weighbridge or not flt(doc.net_weight):
+		return
+	if not ctx.is_active("QTY-WEIGHT-VARIANCE"):
+		return
+
+	expected = 0.0
+	for row in doc.items:
+		if not row.item_code:
+			return
+		per_unit = flt(frappe.get_cached_value("Item", row.item_code, "weight_per_unit"))
+		if not per_unit:
+			return
+		expected += per_unit * flt(row.stock_qty or row.qty)
+
+	if not expected:
+		return
+
+	variance = abs(flt(doc.net_weight) - expected) / expected * 100
+	limit = flt(ctx.threshold("QTY-WEIGHT-VARIANCE", 10))
+	ctx.check(
+		"QTY-WEIGHT-VARIANCE",
+		variance > limit,
+		_("Net weight {0} differs from the expected {1} by {2}%, more than the permitted {3}%.").format(
+			flt(doc.net_weight, 3), flt(expected, 3), flt(variance, 1), limit
+		),
+		fieldname="net_weight",
+		values={"net_weight": flt(doc.net_weight), "expected": flt(expected, 3)},
+	)
+
+
+def _mixed_grouping(doc, ctx):
+	"""Multi-source passes should not mix documents that differ on key fields.
+
+	Which fields matter varies by install — one site cares that every purchase
+	order on a pass shares a purchase type, another does not care at all — so the
+	list comes from Gate Pass Settings and the check stands down when it is empty.
+	"""
+	documents = {r.source_document for r in doc.items if r.source_document}
+	if len(documents) < 2 or not doc.source_doctype:
+		return
+	if not ctx.is_active("SRC-MIXED-GROUP"):
+		return
+
+	raw = (guards.get_settings().get("group_by_fields") or "").strip()
+	if not raw:
+		return
+
+	meta = frappe.get_meta(doc.source_doctype)
+	for fieldname in [f.strip() for f in raw.replace("\n", ",").split(",") if f.strip()]:
+		if not meta.has_field(fieldname):
+			continue
+		values = {
+			frappe.db.get_value(doc.source_doctype, name, fieldname) for name in sorted(documents)
+		}
+		values.discard(None)
+		ctx.check(
+			"SRC-MIXED-GROUP",
+			len(values) > 1,
+			_("The {0}s on this Gate Pass have different {1}: {2}.").format(
+				_(doc.source_doctype),
+				frappe.bold(meta.get_label(fieldname)),
+				", ".join(sorted(str(v) for v in values)),
+			),
+			fieldname="items",
+		)

@@ -33,8 +33,7 @@ def prevent_delete_on_submit(doc, method=None):
 	if docstatus != 1:
 		return
 
-	allowed = {r.role for r in settings.get("attachment_unlock_roles") or []}
-	if allowed & set(frappe.get_roles()):
+	def record():
 		log_event(
 			gate_pass=doc.attached_to_name,
 			event="Attachment Removed",
@@ -42,10 +41,32 @@ def prevent_delete_on_submit(doc, method=None):
 			field_changed="attachment",
 			old_value=doc.file_url,
 		)
+
+	allowed = {r.role for r in settings.get("attachment_unlock_roles") or []}
+	if allowed & set(frappe.get_roles()):
+		record()
 		return
 
-	frappe.throw(
-		_("Attachments on a submitted Gate Pass cannot be removed. "
-		  "Ask a Gate Pass Manager, or cancel the Gate Pass first."),
-		title=_("Attachment is locked"),
+	# LIFE-ATTACH-LOCK decides what happens to everyone else. This used to throw
+	# unconditionally, so the rule's Block/Warn/Ignore setting in Gate Pass
+	# Settings had no effect — setting it to Ignore still locked the attachment.
+	from gatepass_management.rules.engine import RuleContext
+
+	gate_pass = frappe.get_cached_doc("Gate Pass", doc.attached_to_name)
+	action = RuleContext(gate_pass).resolve_action("LIFE-ATTACH-LOCK")
+
+	if action == "Ignore":
+		record()
+		return
+
+	message = _(
+		"Attachments on a submitted Gate Pass cannot be removed. "
+		"Ask a Gate Pass Manager, or cancel the Gate Pass first."
 	)
+
+	if action == "Warn":
+		frappe.msgprint(message, title=_("Attachment was locked"), indicator="orange")
+		record()
+		return
+
+	frappe.throw(message, title=_("Attachment is locked"))

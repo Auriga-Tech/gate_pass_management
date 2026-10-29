@@ -16,6 +16,8 @@ app_include_css = "gatepass_management.bundle.css"
 
 doctype_js = {
 	"Gate Pass": "public/js/gate_pass.js",
+	"Gate Pass Settings": "public/js/gate_pass_settings.js",
+	"Gate Pass Source": "public/js/gate_pass_source.js",
 	"Purchase Order": "public/js/source_forms/purchase_order.js",
 	"Subcontracting Order": "public/js/source_forms/subcontracting_order.js",
 	"Stock Entry": "public/js/source_forms/stock_entry.js",
@@ -140,6 +142,7 @@ scheduler_events = {
 	"daily": [
 		"gatepass_management.gate_pass_management.doctype.gate_pass.scheduler.flag_overdue_returns",
 		"gatepass_management.gate_pass_management.doctype.gate_pass.scheduler.refresh_statuses",
+		"gatepass_management.gate_pass_management.doctype.gate_pass.scheduler.flag_stale_drafts",
 		"gatepass_management.gate_pass_management.doctype.gate_pass_event_log.retention.purge_expired",
 		"gatepass_management.sources.automation.expire_unclaimed_drafts",
 	],
