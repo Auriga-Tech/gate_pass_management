@@ -36,6 +36,17 @@ class GatePass(Document):
 
 	def validate(self):
 		self._check_amend_allowed()
+		self.derive_fields()
+		self.run_rules()
+
+	def derive_fields(self):
+		"""Fill in everything the rules are then judged against.
+
+		Separate from `validate` so the rules can be run against a document
+		without saving it — several of them read a derived field such as
+		`has_discrepancy` or `accepted_qty`, and a test that skipped this step
+		would be checking a half-built document rather than the rule.
+		"""
 		self._apply_party_defaults()
 		self._derive_direction()
 		self._resolve_party()
@@ -45,7 +56,6 @@ class GatePass(Document):
 		self._compute_weights()
 		self._refresh_compliance()
 		self._set_status()
-		self.run_rules()
 
 	def before_submit(self):
 		self._stamp_timestamps()
@@ -340,7 +350,11 @@ class GatePass(Document):
 
 	def _compute_row_values(self):
 		for row in self.items:
-			row.conversion_factor = flt(row.conversion_factor) or 1
+			# Default only when it was never filled in. `or 1` also rewrote an
+			# explicit 0, which silently repaired the exact value ITEM-CONVERSION
+			# exists to reject — leaving that rule unable to fire at all.
+			if row.conversion_factor in (None, ""):
+				row.conversion_factor = 1
 			row.stock_qty = flt(row.qty) * flt(row.conversion_factor)
 			row.amount = flt(row.qty) * flt(row.rate)
 
