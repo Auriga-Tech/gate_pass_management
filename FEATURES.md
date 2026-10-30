@@ -49,9 +49,9 @@ The **Enforcement Impact Preview** report replays your own history against a can
 
 **Why this matters:** nobody's production ERP breaks on install day. This is the single biggest reason gate-control projects fail, and it is designed out.
 
-### 3. Every rule is configurable — 60 of them
+### 3. Sixty rules, 44 of them yours to configure
 
-Each rule is **Block**, **Warn**, or **Ignore**, resolved through four layers:
+Each configurable rule is **Block**, **Warn**, or **Ignore**, resolved through four layers (a further 16 integrity checks are fixed, because bypassing them would corrupt the ledger):
 
 ```
 Global preset  →  Per-rule setting  →  Per-flow override  →  Bypass role
@@ -65,7 +65,7 @@ Block on over-quantity for purchase receipts while warning on delivery notes. Bl
 
 The gate is the last point where a non-compliant dispatch is still preventable.
 
-Ships with an **India provider**: blocks dispatch until the E-Invoice (IRN) and E-Way Bill actually exist on the invoice. Thresholds are read live from GST Settings and the state-wise E-Way Bill master — never hard-coded, because the limits change and vary by state.
+Ships with an **India provider** (it needs the India Compliance app, and switches off cleanly when that app is absent): blocks dispatch until the E-Invoice (IRN) and E-Way Bill actually exist on the invoice. Thresholds are read live from GST Settings and the state-wise E-Way Bill master — never hard-coded, because the limits change and vary by state.
 
 The operator sees plain language — *"Ask Priya, who created SI-00123, to generate the E-Way Bill"* — with a **Re-check** button to press once it is done, while the vehicle waits.
 
@@ -85,7 +85,7 @@ Reads happen under a database row lock, so two operators processing the same pur
 
 Shortage, damage and rejection are recorded at the gate — per item, with a reason and a **liable party** (supplier, transporter, internal).
 
-**Accepted quantity**, not the paperwork quantity, is what flows into the Purchase Receipt. Damaged quantity maps to rejected quantity with a rejected warehouse, automatically.
+**Accepted quantity**, not the paperwork quantity, is what flows into the Purchase Receipt. Damaged goods and goods rejected at the gate map to rejected quantity with a rejected warehouse, automatically. Whether a counted shortage is also booked as rejected stock is a setting you choose: by default short goods are simply not received, so the order line stays open.
 
 Damage found while unloading, after the pass is submitted, can still be recorded — role-gated, reason required, fully audited, and refused once a receipt exists.
 
@@ -134,7 +134,12 @@ No swallowed exceptions. No partial batch reported as success. When a batch part
 - Charges, with mandatory rows where configured
 - Free-text items for tools, scrap, samples and documents with no Item master
 - Batch and serial capture
-- Tracking ID from a Jinja template, rendered once at creation and then frozen
+- Several documents from one party on a single pass, with a list of them and a one-click remove while a draft; a different party or a repeated document is refused
+- A picker that offers only what still has something left to pass
+- Fifteen ready-made purposes, offered only for the direction they fit, each pre-filling its usual pass type
+- Party address and contact limited to the chosen party, with the contact's mobile filled in
+- Allowed party types, and a separate numbering series for inward and outward passes
+- Tracking ID from a placeholder template (`{{ party_code }}/{{ reference_no }}`), rendered once at creation and then frozen
 
 ### Source flows — twelve shipped, unlimited configurable
 Purchase Order · Subcontracting Order (finished goods) · Subcontracting Order (raw material out) · Stock Entry (send to subcontractor) · Stock Entry (transit out) · Stock Entry (transit in) · **Stock Entry (manual return, before any return entry exists)** · Purchase Receipt return · Subcontracting Receipt return · **Sales Invoice** · Delivery Note · **Gate Pass return leg**
@@ -166,8 +171,8 @@ Each flow configures: child table, item/qty/UOM/rate/warehouse/BOM fields, pendi
 - Passing numbers printed on the gate slip the driver carries
 
 ### Configuration
-- ~70 global settings across ten tabs
-- 60-rule table with per-rule action, threshold, bypass roles and custom message
+- 76 global settings in 18 sections
+- 44 configurable rules with per-rule action, threshold, bypass roles and custom message, plus 16 fixed integrity checks
 - Field rules: make any field mandatory, hidden or read-only, scoped by direction, type or flow
 - Document checklist and charge types
 - Four one-click enforcement presets
@@ -201,7 +206,7 @@ Twelve flows ship as configuration you can duplicate and edit. Each defines its 
 Direction is derived from the document, quantities are pre-filled, drafts can be created automatically so the guard only confirms, and accepted quantity is calculated from what they report as short or damaged. They enter vehicle, driver, and what went wrong.
 
 **"What about GST compliance?"**
-Enforced at the gate, reading live from `india_compliance` and GST Settings. Thresholds come from the state-wise master, never hard-coded. Overrides are possible but always recorded.
+Enforced at the gate, reading live from `india_compliance` and GST Settings when that app is installed. Thresholds come from the state-wise master, never hard-coded. Overrides are possible but always recorded.
 
 **"How do we know it's working?"**
 Nine reports, an immutable audit trail, and a trace ID on every error that ties the user's message to the log and the Error Log.

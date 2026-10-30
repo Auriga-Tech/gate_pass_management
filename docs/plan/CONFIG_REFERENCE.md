@@ -235,26 +235,28 @@ Two design notes worth stating explicitly:
 
 Grouped by where the setting lives. This is the implementer's map.
 
-## C.1 `Gate Pass Settings` — Single (~70 fields)
+## C.1 `Gate Pass Settings` — Single (76 fields in 18 sections)
 
 | Group | Knobs |
 |---|---|
-| **Master** | `enabled` · `enforcement_preset` · `enforce_from_date` |
-| **Naming** | `naming_series` · `separate_series_by_direction` · `prefix_by_location` · `naming_rule` |
-| **Dating** | `allow_backdated` + `backdate_limit_days` · `allow_future_dated` + `futuredate_limit_days` |
-| **Party** | `allowed_party_types` · `default_party_type` · `allow_gate_pass_without_party` |
-| **Items** | `allow_gate_pass_without_items` · `allow_non_stock_items` · `default_uom_source` |
-| **Discrepancy** | `enable_discrepancy` · `discrepancy_reasons_mandatory` · `allow_post_submit_discrepancy` · `post_submit_discrepancy_roles` · `discrepancy_escalation_pct` · `discrepancy_escalation_roles` · `default_rejected_warehouse` · `shortage_handling` (**Not Received** default / Book as Rejected — whether a counted shortage is booked as rejected qty on the target) |
-| **Compliance** | `enable_compliance_checks` · `compliance_staleness_minutes` · `compliance_override_roles` · `block_on_provider_failure` (default on) · `show_compliance_on_print` |
+| **Master** | `enabled` · `enforcement_preset` · `enforce_from_date` · `company` |
+| **Naming** | `naming_series` · `separate_series_by_direction` · `naming_series_in` · `naming_series_out` (with the switch on, an inward pass is named from the inward series and an outward one from the outward series, and the form's Series field follows the direction) |
+| **Dating** | `allow_backdated` · `allow_future_dated` (how far is a threshold on the dating rules) |
+| **Party** | `allowed_party_types` (the only types the Party Type field offers; empty allows all; the default must be one of them) · `default_party_type` · `allow_gate_pass_without_party` |
+| **Items** | `allow_gate_pass_without_items` · `allow_non_stock_items` · `hide_fully_passed_documents` (leave fully gate-passed documents out of the picker, default on) · `group_by_fields` (fields every document on a multi-document pass must agree on) |
+| **Discrepancy** | `enable_discrepancy` · `allow_post_submit_discrepancy` · `post_submit_discrepancy_roles` · `default_rejected_warehouse` · `shortage_handling` (**Not Received** default / Book as Rejected: whether a counted shortage is booked as rejected qty on the target) |
+| **Compliance** | `enable_compliance_checks` · `compliance_override_roles` · `block_on_provider_failure` (default on) · `show_compliance_on_print` |
 | **Automation** | `enable_auto_draft_creation` · `auto_draft_notify` · `auto_draft_expiry_days` (auto-cancel unclaimed drafts) |
 | **Required fields** | `require_location` · `require_gate` · `require_vehicle` · `require_driver` · `require_reference_no` · `require_packaging_check` · `require_documentation_check` · `require_vehicle_photo` |
-| **Features** | `enable_returnable` · `enable_charges` · `enable_valuation` · `enable_weighbridge` · `enable_batch_serial` · `enable_cost_center` · `enable_security_officer` · `enable_eway_bill` · `enable_qr_code` · `enable_mobile_console` · `enable_packages` |
-| **Tracking ID** | `enable_tracking_id` · `tracking_id_template` · `tracking_id_unique` · `tracking_id_inherit_field` |
-| **Returnable** | `default_return_days` · `max_return_days` · `overdue_reminder_days_before` · `auto_close_on_full_return` |
+| **Features** | `enable_returnable` · `enable_charges` · `enable_valuation` · `enable_weighbridge` · `enable_batch_serial` · `enable_cost_center` · `enable_security_officer` · `enable_eway_bill` · `enable_qr_code` · `enable_packages` |
+| **Tracking ID** | `enable_tracking_id` · `tracking_id_template` (placeholders only: `{{ party_code }}`, `{{ party }}`, `{{ reference_no }}`, `{{ vehicle_number }}`, `{{ posting_date }}`, `{{ direction }}`; anything else is refused) · `tracking_id_unique` · `tracking_id_inherit_field` |
+| **Returnable** | `default_return_days` · `overdue_reminder_days_before` · `auto_close_on_full_return` |
 | **Lifecycle** | `cancellation_policy` · `lock_attachments_on_submit` · `attachment_unlock_roles` · `timestamp_edit_roles` · `allow_amend` |
 | **Permissions** | `restrict_by_source_role` · `restrict_by_location` · `restrict_by_gate` · `restrict_by_company` |
-| **Notifications** | `notify_on_submit` · `notify_roles` · `notify_overdue_returns` · `overdue_escalation_roles` · `email_template` · `enable_whatsapp` · `notify_on_block` |
-| **Advanced** | `ledger_lock_timeout_seconds` · `log_level` · `event_log_retention_days` · `enable_api_rate_limit` · `override_reason_min_length` |
+| **Notifications** | `notify_on_submit` · `notify_roles` · `notify_overdue_returns` · `overdue_escalation_roles` · `email_template` (an Email Template rendered through Frappe's own path, with `intro`, `doc` and the document's fields available) · `enable_whatsapp` · `notify_on_block` |
+| **Advanced** | `ledger_lock_timeout_seconds` · `log_level` · `event_log_retention_days` |
+
+**Not in 1.0.** Earlier drafts of this plan listed these as settings; they are not built: `backdate_limit_days` and `futuredate_limit_days` (the limits are rule thresholds), `prefix_by_location`, `naming_rule`, `default_uom_source`, `discrepancy_reasons_mandatory`, `discrepancy_escalation_pct`, `discrepancy_escalation_roles`, `compliance_staleness_minutes`, `max_return_days`, `enable_api_rate_limit`, `override_reason_min_length`, and `enable_mobile_console` (the mobile gate console is planned for v1.1).
 
 ## C.2 Child tables of Settings
 
@@ -274,7 +276,7 @@ The practical consequence: a customer can require a signed challan and block on 
 
 `Gate` — location, active, allowed directions, allowed gate pass types, operating hours, default security officer.
 `Gate Pass Location` — tree, company, address, active.
-`Gate Pass Purpose` — direction, default gate pass type, default source, active.
+`Gate Pass Purpose` — purpose, direction it applies to (In / Out / Both), default gate pass type, active, description. Fifteen ship. The Purpose field on a gate pass offers only active purposes that fit its direction, picking one pre-fills the pass type, and a mismatched or retired purpose is refused when it is chosen.
 `Gate Pass Discrepancy Reason` — reason, category (Shortage / Damage / Rejection / Documentation), liable party (Supplier / Transporter / Internal / Unknown), requires photo, active. Makes discrepancies reportable by cause and by who is liable, which is what turns the Discrepancy Register into a supplier scorecard and a transporter claim.
 
 ## C.6 Compliance provider registration
@@ -285,7 +287,7 @@ The practical consequence: a customer can require a signed challan and block on 
 
 Making this explicit is as important as the list above; unbounded configurability is how a product becomes unmaintainable.
 
-- The 11 HARD rules in §B.1
+- The 16 HARD rules (11 in §B.1, the rest in the sections that own them)
 - That Gate Pass never posts a Stock Ledger or GL Entry
 - The ledger key (`source_row`) and how consumption is computed
 - Event Log immutability

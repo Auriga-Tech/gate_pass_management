@@ -1,6 +1,6 @@
 # Gate Pass Management — User Manual
 
-**Version 1.0 · Frappe / ERPNext v16**
+**Version 1.0.0 · Frappe / ERPNext v16**
 
 ---
 
@@ -68,6 +68,10 @@ Click **Get Items From** and pick what matches the paperwork the driver handed y
 
 Search by supplier or document number. Tick it, then press **Get Items**.
 
+The list shows only orders that still have something left to pass. An order that
+has already been fully gate-passed is left out (your administrator can switch this
+off in Settings, and picking one then explains which gate pass used it up).
+
 **One truck, several orders.** Tick more than one document to put them all on the
 same gate pass, for example two purchase orders from the same supplier on one
 vehicle. The rules:
@@ -82,7 +86,36 @@ vehicle. The rules:
 The pass then shows **Spans Multiple Documents**, and creating the receipts makes
 one for each purchase order.
 
-The rows appear on the form but are not saved until you press **Save**.
+A **Documents on this Gate Pass** list shows every document on the pass. While the
+pass is still a draft, press the **x** beside a document to take it off again, for
+example when the driver did not bring that order. Its rows are removed, the table
+is renumbered and the totals update. Nothing is changed in the database until you
+save.
+
+The rows appear on the form but are not saved until you press **Save**. The form
+shows **Not Saved** until you do.
+
+#### The party, its address and its contact
+
+Material that comes from a document has its party filled in for you. If you start
+without one, choose **Party Type** and **Party**. Only the party types your
+administrator has allowed are offered.
+
+- **Party Address** and **Party Contact** offer only the addresses and contacts
+  that are linked to that party, and nothing until a party is chosen. If the one
+  you need is missing, ask the office to add the party under *Links* on that
+  Address or Contact.
+- Choosing a different party clears both, because they belonged to the old party.
+- **Contact Mobile** is filled in from the contact when you save, if you left it blank.
+- Saving with an address or contact that is not linked to the party is refused.
+
+#### The purpose (optional)
+
+**Purpose** says why the material is moving. The list offers only purposes that fit
+the direction of the pass, so an inward pass will not offer *Sales Dispatch*, and
+choosing one fills in the pass type it usually means (*Visitor or Vendor Visit*
+sets the type to Visitor). You can still change the type. If you change the
+direction after choosing, a purpose that no longer fits is cleared.
 
 The system fills in the items, showing for each one:
 
@@ -225,6 +258,8 @@ The change is recorded permanently with your name, the old value and the new one
 Common — you cannot see everything at the gate.
 
 Open the gate pass → **Correct → Record Discrepancy**. Enter what you found and describe it.
+
+The pass's totals and its **Discrepancy Recorded** flag update to match what you entered.
 
 > This only works until the store creates the receipt. After that, the store must cancel the receipt first.
 
@@ -470,11 +505,19 @@ to Subcontractor, Job Work - Receive Back, Stock Transfer, Customer Return,
 Supplier Return, Sample Dispatch, Repair and Maintenance, Returned After Repair,
 Tools, Dies and Cylinders on Loan, Scrap Disposal, Asset Movement, Visitor or
 Vendor Visit, Vehicle Entry Only. Add your own, or mark any you do not use as
-inactive. Each one records a direction and a default pass type; these are kept
-for reporting and do not yet change what the gate pass form does.
+inactive. Each one records the **direction** it applies to (In, Out or Both) and a
+default **pass type**, and the gate pass uses both:
 
-Nothing depends on it. It exists so you can filter and group later — "show me
-everything that went out for repair last quarter". Skip it until you want that.
+- The Purpose dropdown offers only active purposes that fit the pass's direction.
+  *Both* fits either.
+- Choosing a purpose pre-fills the pass type. The guard can still change it.
+- Saving a pass with a purpose for the other direction, or a retired purpose, is
+  refused. A pass saved earlier keeps its purpose even if the purpose is retired
+  later.
+
+Purpose is optional, and it is a label rather than a rule: nothing else depends on
+it. It is what you filter and group on later, such as "show me everything that went
+out for repair last quarter".
 
 ## Gate Pass Discrepancy Reason
 
@@ -666,7 +709,7 @@ have to look up.
 
 # Gate Pass Settings — the global switchboard
 
-One page, ten tabs. It works out of the box; you visit it to change policy, not
+One page, eighteen sections. It works out of the box; you visit it to change policy, not
 to make the app run.
 
 | Tab | What lives there |
@@ -684,8 +727,8 @@ to make the app run.
 | **Automation** | Auto-created drafts, and when unclaimed ones expire |
 | **Lifecycle** | Cancellation policy, attachment locking, who may amend timestamps |
 | **Access Restrictions** | Restrict visibility by flow, location, gate or company |
-| **Notifications** | Who is told what, and by which channel |
-| **Rules** | The 44 configurable rules — see below |
+| **Notifications** | Who is told what, and by which channel. An optional Email Template can word the message: it may use `{{ intro }}`, the document's fields such as `{{ party }}`, or `{{ doc.party }}` |
+| **Rules** | The 44 configurable rules, see below. A further 16 integrity checks are fixed and cannot be switched off |
 | **Field Rules** | Make any field mandatory, hidden or read-only |
 | **Charge Types** | The charges to seed on a new gate pass |
 | **Advanced** | Lock timeout, log level, audit retention |
@@ -763,7 +806,19 @@ It should not be possible; the app locks the source document during validation. 
 Settings → Rules, find the code from the error message, set it to Warn or Ignore. If it should stay strict for most people, add a bypass role instead.
 
 **"Compliance says Provider Unavailable."**
-The app could not verify with `india_compliance` and **fails closed** on purpose. Check that app is installed and GST Settings is configured. A manager can override with a reason if you have confirmed the document exists another way.
+The check tried to verify the document and failed (for example GST Settings is incomplete, or the India Compliance data is not there yet). By default the app **fails closed** on purpose, so the vehicle is held. Settings → Compliance has a switch for this. Check that India Compliance is installed and GST Settings is configured, then press **Re-check**. A manager can override with a reason if you have confirmed the document exists another way. If India Compliance is not installed at all, these checks report *Not Applicable* and never block.
+
+**"It says 'Different party' when I add a second order."**
+One gate pass covers one party. Put each supplier's orders on their own gate pass.
+
+**"It says the order is 'already on this Gate Pass'."**
+The same document cannot be added twice, so its quantities are never counted twice. To drop it, press the **x** beside it in *Documents on this Gate Pass*.
+
+**"The Party Address (or Party Contact) list is empty."**
+It offers only what is linked to the party on the pass. Open the Address or Contact, add the party under *Links*, and try again. Choose the party first: until one is chosen both lists are empty.
+
+**"A purpose I expect is not in the list."**
+The list shows only active purposes that fit the pass's direction. Check the direction, and the purpose's own Direction and Active settings.
 
 **"The app is causing problems and I need it to stop."**
 Gate Pass Settings → uncheck **Enabled**. Every check goes inert immediately and ERPNext behaves exactly as before installation. Nothing is deleted.

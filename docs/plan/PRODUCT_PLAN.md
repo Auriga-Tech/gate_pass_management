@@ -200,10 +200,10 @@ Legend: **R** reqd · **RO** read-only · **H** hidden · `→` Link target · `
 | `party` | Dynamic Link | `party_type` | R | |
 | `party_name` | Data | — | RO | Resolved server-side; never a client fetch |
 | `party_display_name` | Data | — | | Free text when `party_type` is Contact/blank |
-| `address` | Link | → Address | `mandatory_depends_on` from Settings | |
+| `address` | Link | → Address | `mandatory_depends_on` from Settings | Only addresses linked to the party are offered; others are refused on save |
 | `address_display` | Small Text | — | RO | |
-| `contact_person` | Link | → Contact | | |
-| `contact_mobile` | Phone | — | | |
+| `contact_person` | Link | → Contact | | Only contacts linked to the party are offered; others are refused on save |
+| `contact_mobile` | Data | — | | Filled from the Contact's mobile when left blank |
 
 #### Section — Source Document
 | Fieldname | Type | Options / → | Flags | Notes |
@@ -534,7 +534,7 @@ Every rule is numbered, server-enforced, independently unit-tested, and carries 
 
 **Enforcement is configured per rule, not globally.** Each rule resolves to **Block / Warn / Ignore** through four layers — global preset → per-rule setting → per-source override → bypass role. Rules marked 🔒 are **HARD**: they always block and cannot be configured, because bypassing them would corrupt the ledger or produce documents that cannot be reasoned about. Rules marked ⚠ are configurable; the action shown below is the shipped **default**, which the `Advisory` preset downgrades to Warn.
 
-**The complete catalogue — 48 rules, 11 HARD, 37 configurable, 24 source-overridable, with rule codes, defaults, thresholds and override semantics — is in `GATE_PASS_CONFIG_REFERENCE.md` Part B.** The tables below give the rule logic and messages.
+**The complete catalogue — 60 rules, 16 HARD, 44 configurable, 33 source-overridable, with rule codes, defaults, thresholds and override semantics — is in `GATE_PASS_CONFIG_REFERENCE.md` Part B.** The tables below give the rule logic and messages.
 
 ### On validate — header
 
@@ -958,3 +958,38 @@ Target: **≥ 85% line coverage, 100% of the numbered rules.**
 8. **Textile fields** (fabric width/length, dyed dimensions). Recommendation: keep them out of the public app entirely — a small private overlay app for that customer, or Item Attributes.
 9. **Compliance scope for v1.0.** Recommendation: ship the framework plus the India provider only (E-Invoice, E-Way Bill). Other jurisdictions arrive through the hook, contributed or commissioned. Confirm you want India in v1.0 rather than v1.1 — it is +1.5 weeks and, in my judgement, the strongest single reason an Indian customer chooses this app over building their own.
 10. **Discrepancy → receipt mapping.** Recommendation: `damaged_qty` maps to `Purchase Receipt Item.rejected_qty` with a rejected warehouse, and `accepted_qty` (not `qty`) is what flows to the target. This is ERPNext-native and means the gate's count is the receipt's count. Confirm, because it makes the gate pass genuinely authoritative over the receipt — which is the point, but it is a real shift in who owns the number.
+
+---
+
+# Appendix — What changed between this plan and release 1.0.0
+
+This plan was written before the build. Where the shipped app differs, the app is
+right and this list says how.
+
+**Decisions from section 23, resolved**
+
+| Decision | Outcome |
+|---|---|
+| App and DocType names | The app is `gate_pass_management`, the module and DocType are `Gate Pass Management` / `Gate Pass`. The repository, the Python package and the module folder all share that name. |
+| Licence | GPL-3.0 |
+| Visitor and people passes | Not in 1.0; planned for v1.1 together with the approval workflow |
+| Mobile gate console | Moved from 1.0 to v1.1. The `scan` and `yard_status` endpoints exist as groundwork. |
+| Default enforcement preset | Advisory |
+| Compliance scope | The framework plus the India provider (E-Invoice, E-Way Bill). The provider needs the India Compliance app and switches itself off without it. |
+| Weighbridge | Manual gross, tare and net only |
+| Discrepancy to receipt | Damaged goods and goods rejected at the gate become the receipt's rejected quantity in the rejected warehouse. Shortage is a setting (**Shortage on the Receipt**): by default it is not received, so the order line stays open; the alternative books it as rejected. |
+
+**Behaviour added or changed during the build**
+
+- **Several documents on one pass.** The picker sends every ticked document. A different party, or a document already on the pass, is refused. A draft lists its documents and each can be removed. Target creation already made one receipt per source document.
+- **The picker leaves out fully passed documents**, controlled by a setting.
+- **Purposes carry meaning.** Direction filters the dropdown and is enforced on save; the default pass type pre-fills the type.
+- **Party address and contact** are offered only from those linked to the party, and refused otherwise; the contact's mobile fills in.
+- **Allowed Party Types** restricts the Party Type field and the default must be one of them.
+- **Numbering follows direction** when the site keeps a series per direction.
+- **Tracking ID templates** use `{{ field }}` placeholders from a fixed list, not Jinja, so stored text cannot run code.
+- **Notifications** render the configured Email Template through Frappe's own path.
+- **Guards read the whole source document** through a dedicated picker query; narrowing that by location is done per deployment with User Permissions.
+- **Flows are keyed by a fixed Flow Code** (for example `PO-IN`), so the display name can be edited without duplicating the flow.
+- **Cost center** carries from the pass to the target document, and the **E-Way Bill number** is filled onto the pass from the source document once the compliance check passes (a number the guard typed is never overwritten).
+- **Stored values.** A pass's status, totals and discrepancy flag are written to the database after submission and on cancellation, so reports and filters read the truth.

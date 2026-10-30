@@ -45,11 +45,11 @@ It records a physical movement across a boundary and reconciles it against the c
 
 ## Highlights
 
-**Inward and outward in one document.** Purchase orders, subcontracting, stock transfers, delivery notes, sales invoices, returns — and returnable movements for tools and equipment that must come back.
+**Inward and outward in one document.** Purchase orders, subcontracting, stock transfers, delivery notes, sales invoices, returns — and returnable movements for tools and equipment that must come back. Several documents from the same party can share one pass.
 
 **A consumption ledger that actually works.** Every gate pass row remembers the exact source line it draws on, so partial gate passes chain correctly across many passes and many receipts. Reads are taken under a row lock, so two operators working the same purchase order at the same moment cannot both slip through.
 
-**Statutory compliance at the gate.** The gate is the last point where a non-compliant dispatch is still preventable. Ships with an India provider that blocks dispatch until the E-Invoice (IRN) and E-Way Bill exist, reading thresholds from GST Settings rather than hard-coding them. The framework is jurisdiction-neutral; other countries plug in through a hook.
+**Statutory compliance at the gate.** The gate is the last point where a non-compliant dispatch is still preventable. Ships with an India provider (it needs the India Compliance app, and switches off cleanly without it) that blocks dispatch until the E-Invoice (IRN) and E-Way Bill exist, reading thresholds from GST Settings rather than hard-coding them. The framework is jurisdiction-neutral; other countries plug in through a hook.
 
 **Discrepancy where it is discovered.** Shortage, damage and rejection are captured at the gate, by reason and by liable party. Accepted quantity — not the paperwork quantity — is what flows into the receipt. Damaged goods and goods rejected at the gate map to rejected quantity automatically; whether a shortage is booked as rejected too is a setting (**Shortage on the Receipt**), and by default short goods are simply not received, so the order line stays open.
 
