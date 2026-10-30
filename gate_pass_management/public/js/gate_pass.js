@@ -458,6 +458,16 @@ gatepass.draw_source_card = function (frm, docs) {
 	wrapper.find(".gp-src-x").on("click", (e) => gatepass.unlink_source(frm, $(e.currentTarget).data("doc")));
 };
 
+// The server recalculates every total on save; this keeps the screen honest until then,
+// after rows are pulled in or a document is taken off.
+gatepass.update_totals = function (frm) {
+	const sum = (field) => (frm.doc.items || []).reduce((t, r) => t + flt(r[field]), 0);
+	frm.doc.total_qty = sum("qty");
+	frm.doc.total_accepted_qty = sum("accepted_qty");
+	frm.doc.total_packages = sum("packages");
+	frm.doc.total_amount = sum("amount");
+};
+
 gatepass.unlink_source = function (frm, source_document) {
 	const rows = (frm.doc.items || []).filter((r) => r.source_document === source_document);
 	frappe.confirm(
@@ -471,13 +481,7 @@ gatepass.unlink_source = function (frm, source_document) {
 			frm.doc.source_document = remaining[0] || null;
 			frm.doc.is_multi_source = remaining.length > 1 ? 1 : 0;
 
-			// The server recalculates on save; this keeps the screen honest until then.
-			const sum = (field) => frm.doc.items.reduce((t, r) => t + flt(r[field]), 0);
-			frm.doc.total_qty = sum("qty");
-			frm.doc.total_accepted_qty = sum("accepted_qty");
-			frm.doc.total_packages = sum("packages");
-			frm.doc.total_amount = sum("amount");
-
+			gatepass.update_totals(frm);
 			frm.refresh_fields();
 			frm.trigger("render_source_card");
 			frm.dirty();
@@ -525,6 +529,7 @@ gatepass.pick_source_document = function (frm, source) {
 				callback({ message }) {
 					if (!message) return;
 					frappe.model.sync(message);
+					gatepass.update_totals(frm);
 					frm.refresh();
 					// The rows exist only in the browser until saved; say so.
 					frm.dirty();

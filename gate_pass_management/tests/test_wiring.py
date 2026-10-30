@@ -539,3 +539,17 @@ class TestNoUnsafePatterns(FrappeTestCase):
 
 	def test_no_sql_is_built_from_strings(self):
 		self.assertEqual(self._scan()[2], [], "use frappe.qb or bound parameters")
+
+
+class TestTotalsAreShownAfterAPull(FrappeTestCase):
+	"""Rows pulled in, or a document taken off, must not leave the totals at zero
+	until the next save: the server recalculates on save, so the screen has to
+	do it in between."""
+
+	def test_the_pull_and_the_removal_both_refresh_the_totals(self):
+		js = (APP / "public" / "js" / "gate_pass.js").read_text(encoding="utf-8")
+		self.assertIn("gatepass.update_totals = function", js)
+		pull = js[js.index("frappe.model.sync(message)") :][:200]
+		self.assertIn("gatepass.update_totals(frm)", pull, "the pull must refresh the totals")
+		removal = js[js.index("gatepass.unlink_source = function") :][:1500]
+		self.assertIn("gatepass.update_totals(frm)", removal, "removing a document must too")
