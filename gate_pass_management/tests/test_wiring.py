@@ -244,11 +244,13 @@ class TestPrintFormatsRender(FrappeTestCase):
 		"""A print format that raises is discovered by a guard at the gate."""
 		from frappe.www.printview import get_html_and_style
 
-		gate_pass = frappe.get_all("Gate Pass", filters={"docstatus": 1}, limit=1, pluck="name")
-		if not gate_pass:
-			self.skipTest("no submitted Gate Pass on this site")
+		# Its own pass, so the formats are exercised on a fresh site and in CI, where
+		# there is nothing already submitted to borrow.
+		from gate_pass_management.tests.utils import ensure_masters, make_gate_pass
 
-		doc = frappe.get_doc("Gate Pass", gate_pass[0]).as_json()
+		gate_pass = make_gate_pass(ensure_masters(), submit=True)
+
+		doc = frappe.get_doc("Gate Pass", gate_pass.name).as_json()
 		for pf in frappe.get_all(
 			"Print Format", filters={"doc_type": "Gate Pass", "standard": "Yes"}, pluck="name"
 		):
