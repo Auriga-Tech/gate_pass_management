@@ -1,0 +1,54 @@
+[project]
+name = "gate_pass_management"
+authors = [
+    { name = "Auriga IT", email = "erp@aurigait.com" }
+]
+description = "Gate Pass Management for ERPNext — control every material movement at the gate."
+requires-python = ">=3.10"
+readme = "README.md"
+dynamic = ["version"]
+# Both are already pulled in by Frappe (PyQRCode) and ERPNext (pypng), and these
+# pins match theirs. They are declared anyway because gate_pass_management.utils.jinja
+# imports them directly: relying on a transitive dependency works until the one
+# that supplies it drops it.
+dependencies = [
+    "PyQRCode~=1.2.1",
+    "pypng~=0.20220715.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Auriga-Tech/gate_pass_management"
+Repository = "https://github.com/Auriga-Tech/gate_pass_management"
+Issues = "https://github.com/Auriga-Tech/gate_pass_management/issues"
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.bench.frappe-dependencies]
+frappe = ">=16.0.0,<17.0.0"
+erpnext = ">=16.0.0,<17.0.0"
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "I", "UP", "B", "RUF"]
+ignore = [
+    "B017", # assertRaises(Exception)
+    "B023", # function-uses-loop-variable
+    "B904", # raise-without-from-inside-except
+    "E101", # indentation contains mixed spaces and tabs
+    "E501", # line too long
+    "F401", # imported but unused
+    "W191", # indentation contains tabs
+    "RUF001", # ambiguous unicode character
+    "RUF015", # prefer next(iter(...))
+]
+typing-modules = ["frappe.types.DF"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "tab"
+docstring-code-format = true

@@ -1,0 +1,537 @@
+// Gate Pass form script.
+//
+// Convenience only. Every rule enforced here is enforced again on the server —
+// a rule that lives only in the browser is bypassed by every API call, data
+// import and bulk operation.
+
+frappe.ui.form.on("Gate Pass", {
+	setup(frm) {
+		frm.set_query("gate", () => ({ filters: { is_active: 1, location: frm.doc.location || undefined } }));
+		frm.set_query("location", () => ({ filters: { is_active: 1 } }));
+		frm.set_query("transporter", () => ({ filters: { is_transporter: 1 } }));
+		// A cost center from another company is refused by ERPNext when the target
+		// is created, a long way from where it was chosen.
+		// A purpose is offered only where it fits the direction. "Both" fits either.
+		frm.set_query("purpose", () => ({
+			filters: {
+				is_active: 1,
+				...(frm.doc.direction ? { applies_to_direction: ["in", [frm.doc.direction, "Both"]] } : {}),
+			},
+		}));
+		// Only this party's own addresses and contacts.
+		const of_party = () => ({ link_doctype: frm.doc.party_type, link_name: frm.doc.party });
+		frm.set_query("address", () => ({ query: "gate_pass_management.api.gate_pass.party_address_query", filters: of_party() }));
+		frm.set_query("contact_person", () => ({ query: "gate_pass_management.api.gate_pass.party_contact_query", filters: of_party() }));
+		frm.set_query("party_type", () => ({ query: "gate_pass_management.api.gate_pass.party_type_query" }));
+		frm.set_query("cost_center", () => ({ filters: { company: frm.doc.company, is_group: 0 } }));
+		frm.set_query("discrepancy_reason", "items", () => ({ filters: { is_active: 1 } }));
+	},
+
+	refresh(frm) {
+		gatepass.sync_series(frm);
+		frm.trigger("render_source_card");
+		frm.trigger("render_compliance");
+		frm.trigger("add_buttons");
+		frm.trigger("apply_qty_policy");
+		frm.trigger("show_amended_warning");
+
+		if (frm.doc.docstatus === 1) {
+			frm.page.set_indicator(
+				__(frm.doc.status),
+				gatepass.STATUS_COLOURS[frm.doc.status] || "gray"
+			);
+		}
+	},
+
+	// The operator picks the document they are holding; direction follows from it.
+	source_type(frm) {
+		if (!frm.doc.source_type) return;
+		frappe.db.get_value("Gate Pass Source", frm.doc.source_type, ["direction", "source_doctype", "sub_type"])
+			.then(({ message }) => {
+				if (!message) return;
+				frm.set_value("direction", message.direction);
+				frm.set_value("source_doctype", message.source_doctype);
+				frm.set_value("source_sub_type", message.sub_type);
+			});
+	},
+
+	direction(frm) {
+		frm.trigger("add_buttons");
+		gatepass.sync_series(frm);
+		gatepass.drop_purpose_if_unfit(frm);
+	},
+
+	// A different party has different addresses and contacts, so the old ones go.
+	party(frm) {
+		gatepass.clear_party_links(frm);
+	},
+
+	party_type(frm) {
+		gatepass.clear_party_links(frm);
+	},
+
+	// Picking a purpose pre-fills the pass type it usually means. The operator can
+	// still change the type afterwards; this only saves the first step.
+	purpose(frm) {
+		if (!frm.doc.purpose || frm.doc.docstatus !== 0) return;
+		frappe.db.get_value("Gate Pass Purpose", frm.doc.purpose, "default_gate_pass_type")
+			.then(({ message }) => {
+				const type = message && message.default_gate_pass_type;
+				if (type && frm.doc.gate_pass_type !== type) frm.set_value("gate_pass_type", type);
+			});
+	},
+
+	render_source_card(frm) {
+		const docs = gatepass.source_documents(frm);
+		// A submitted pass over one document says so in the section above already.
+		const show = docs.length > 1 || (docs.length === 1 && frm.doc.docstatus === 0);
+		frm.toggle_display("sb_source_docs", show);
+		if (show) gatepass.draw_source_card(frm, docs);
+
+		// The server derives this on save; keep the box right while the pass is open.
+		const multi = docs.length > 1 ? 1 : 0;
+		if (frm.doc.docstatus === 0 && cint(frm.doc.is_multi_source) !== multi) {
+			frm.doc.is_multi_source = multi;
+			frm.refresh_field("is_multi_source");
+		}
+	},
+
+	add_buttons(frm) {
+		if (frm.doc.docstatus === 0) {
+			frm.trigger("add_get_items_buttons");
+			frm.trigger("add_override_button");
+		}
+
+		if (frm.doc.docstatus === 1) {
+			frm.trigger("add_create_target_button");
+			frm.trigger("add_post_submit_buttons");
+		}
+	},
+
+	// A statutory check is blocking this pass. Someone senior can release it, on
+	// the record. Without this button the endpoint existed and nothing could
+	// reach it, so a blocked dispatch had no way forward at all.
+	add_override_button(frm) {
+		if (frm.is_new() || frm.doc.compliance_override_by) return;
+		if (!["Pending", "Failed"].includes(frm.doc.compliance_status)) return;
+
+		frm.add_custom_button(__("Override Compliance"), () => {
+			frappe.prompt(
+				[
+					{
+						fieldname: "reason",
+						fieldtype: "Small Text",
+						label: __("Why is this being released?"),
+						reqd: 1,
+						description: __(
+							"Recorded permanently against your name and shown in the " +
+								"Compliance Exceptions report."
+						),
+					},
+				],
+				({ reason }) => {
+					frappe.call({
+						method: "gate_pass_management.api.gate_pass.override_compliance",
+						args: { gate_pass: frm.doc.name, reason },
+						freeze: true,
+						callback: () => frm.reload_doc(),
+					});
+				},
+				__("Override Compliance"),
+				__("Release")
+			);
+		}).addClass("btn-danger");
+	},
+
+	add_get_items_buttons(frm) {
+		frappe.call({
+			method: "gate_pass_management.api.gate_pass.list_sources",
+			args: { direction: frm.doc.direction || undefined },
+			callback({ message }) {
+				(message || []).forEach((source) => {
+					frm.add_custom_button(
+						__(source.button_label),
+						() => gatepass.pick_source_document(frm, source),
+						__("Get Items From")
+					);
+				});
+			},
+		});
+	},
+
+	add_create_target_button(frm) {
+		if (!frm.doc.source_type) return;
+		frappe.db.get_value("Gate Pass Source", frm.doc.source_type,
+			["target_doctype", "target_creation_mode"]
+		).then(({ message }) => {
+			if (!message || !message.target_doctype) return;
+			if (!["Manual Button", "From Target Form"].includes(message.target_creation_mode)) return;
+			if (flt(frm.doc.per_processed) >= 100) return;
+
+			frm.add_custom_button(__("Create {0}", [__(message.target_doctype)]), () => {
+				frappe.call({
+					method: "gate_pass_management.targets.create.create_target",
+					args: { gate_pass: frm.doc.name, target_doctype: message.target_doctype },
+					freeze: true,
+					freeze_message: __("Creating {0}…", [__(message.target_doctype)]),
+					callback({ message: result }) {
+						if (!result) return;
+						// Both columns always shown. A partial batch is never
+						// presented as a success.
+						frappe.msgprint({
+							title: result.failed.length
+								? __("Completed with problems")
+								: __("Done"),
+							message: result.message,
+							indicator: result.failed.length ? "orange" : "green",
+						});
+						frm.reload_doc();
+					},
+				});
+			}).addClass("btn-primary");
+		});
+	},
+
+	add_post_submit_buttons(frm) {
+		frm.add_custom_button(__("Amend Entry / Exit Time"),
+			() => gatepass.amend_timestamp(frm), __("Correct"));
+
+		frm.add_custom_button(__("Record Discrepancy"),
+			() => gatepass.record_discrepancy(frm), __("Correct"));
+
+		frm.add_custom_button(__("Audit Trail"), () => {
+			frappe.set_route("List", "Gate Pass Event Log", { gate_pass: frm.doc.name });
+		}, __("View"));
+	},
+
+	show_amended_warning(frm) {
+		if (!frm.doc.timestamps_amended) return;
+		frm.dashboard.add_comment(
+			__("Entry or exit time was amended after submission. See the Audit Trail for what changed and why."),
+			"orange", true
+		);
+	},
+
+	// Locked flows: stop the operator restating an invoice. Differences are
+	// recorded as shortage, damage or rejection instead.
+	apply_qty_policy(frm) {
+		if (!frm.doc.source_type || frm.doc.docstatus !== 0) return;
+		frappe.db.get_value("Gate Pass Source", frm.doc.source_type, "qty_policy")
+			.then(({ message }) => {
+				const locked = message && message.qty_policy === "Locked to Source";
+				frm.fields_dict.items.grid.update_docfield_property("qty", "read_only", locked ? 1 : 0);
+				frm.fields_dict.items.grid.refresh();
+				if (locked) {
+					frm.dashboard.add_comment(
+						__("Quantities are locked to the source document. Record any difference as shortage, damage or rejection."),
+						"blue", true
+					);
+				}
+			});
+	},
+
+	render_compliance(frm) {
+		const wrapper = frm.fields_dict.compliance_html;
+		if (!wrapper) return;
+		if (!frm.doc.compliance_checks || !frm.doc.compliance_checks.length) {
+			wrapper.$wrapper.empty();
+			frm.toggle_display("sb_compliance", false);
+			return;
+		}
+		frm.toggle_display("sb_compliance", true);
+		gatepass.draw_compliance(frm, frm.doc.compliance_checks);
+	},
+});
+
+frappe.ui.form.on("Gate Pass Item", {
+	qty(frm, cdt, cdn) { gatepass.balance_row(frm, cdt, cdn); },
+	shortage_qty(frm, cdt, cdn) { gatepass.balance_row(frm, cdt, cdn); },
+	damaged_qty(frm, cdt, cdn) { gatepass.balance_row(frm, cdt, cdn); },
+	rejected_qty(frm, cdt, cdn) { gatepass.balance_row(frm, cdt, cdn); },
+	rate(frm, cdt, cdn) {
+		const row = locals[cdt][cdn];
+		frappe.model.set_value(cdt, cdn, "amount", flt(row.qty) * flt(row.rate));
+	},
+});
+
+// Accepted qty is derived, so the operator enters what went wrong rather than
+// doing the arithmetic.
+gatepass.balance_row = function (frm, cdt, cdn) {
+	const row = locals[cdt][cdn];
+	const lost = flt(row.shortage_qty) + flt(row.damaged_qty) + flt(row.rejected_qty);
+	frappe.model.set_value(cdt, cdn, "accepted_qty", Math.max(0, flt(row.qty) - lost));
+	frappe.model.set_value(cdt, cdn, "amount", flt(row.qty) * flt(row.rate));
+};
+
+gatepass.draw_compliance = function (frm, checks) {
+	const rows = checks.map((c) => {
+		const colour = {
+			Generated: "var(--green-500)", "Not Required": "var(--blue-500)",
+			"Not Applicable": "var(--gray-400)", Pending: "var(--orange-500)",
+			Failed: "var(--red-500)", "Provider Unavailable": "var(--red-500)",
+		}[c.status] || "var(--gray-400)";
+
+		return `
+			<div class="gp-compliance-row" data-status="${frappe.utils.escape_html(c.status)}">
+				<span class="gp-compliance-dot" style="background:${colour}"></span>
+				<div class="gp-compliance-body">
+					<div class="gp-compliance-label">${frappe.utils.escape_html(c.label)}
+						<span class="text-muted">— ${__(c.status)}</span></div>
+					${c.document_no ? `<div class="gp-compliance-no">${frappe.utils.escape_html(c.document_no)}</div>` : ""}
+					${c.message ? `<div class="gp-compliance-msg">${frappe.utils.escape_html(c.message)}</div>` : ""}
+					${c.remediation ? `<div class="gp-compliance-fix">${frappe.utils.escape_html(c.remediation)}</div>` : ""}
+				</div>
+			</div>`;
+	}).join("");
+
+	frm.fields_dict.compliance_html.$wrapper.html(`
+		<div class="gp-compliance">
+			${rows}
+			<div><button class="btn btn-xs btn-default gp-refresh-compliance">
+				${__("Re-check")}</button></div>
+		</div>`);
+
+	// The operator presses this after the sales team generates the missing
+	// document, while the vehicle waits at the gate.
+	frm.fields_dict.compliance_html.$wrapper.find(".gp-refresh-compliance").on("click", () => {
+		frappe.call({
+			method: "gate_pass_management.api.gate_pass.refresh_compliance",
+			args: { gate_pass: frm.doc.name },
+			freeze: true,
+			freeze_message: __("Re-checking…"),
+			callback({ message }) {
+				if (!message) return;
+				gatepass.draw_compliance(frm, message.checks);
+				frappe.show_alert({
+					message: __("Compliance: {0}", [__(message.status)]),
+					indicator: message.status === "Passed" ? "green" : "orange",
+				});
+			},
+		});
+	});
+};
+
+gatepass.amend_timestamp = function (frm) {
+	const is_in = frm.doc.direction === "In";
+	const fieldname = is_in ? "entry_datetime" : "exit_datetime";
+
+	frappe.prompt(
+		[
+			{
+				fieldname: "value", fieldtype: "Datetime", reqd: 1,
+				label: is_in ? __("Entry Date & Time") : __("Exit Date & Time"),
+				default: frm.doc[fieldname] || frappe.datetime.now_datetime(),
+			},
+			{
+				fieldname: "reason", fieldtype: "Small Text", reqd: 1, label: __("Reason"),
+				description: __("Recorded in the audit trail against your name."),
+			},
+		],
+		(values) => {
+			frappe.call({
+				method: "gate_pass_management.api.gate_pass.amend_timestamp",
+				args: { gate_pass: frm.doc.name, fieldname, ...values },
+				freeze: true,
+				callback: () => frm.reload_doc(),
+			});
+		},
+		__("Amend Time"), __("Save")
+	);
+};
+
+gatepass.record_discrepancy = function (frm) {
+	const fields = [
+		{
+			fieldname: "rows", fieldtype: "Table", label: __("Items"),
+			cannot_add_rows: true, in_place_edit: true,
+			data: frm.doc.items.map((r) => ({
+				name: r.name, item_code: r.item_code, qty: r.qty,
+				shortage_qty: r.shortage_qty, damaged_qty: r.damaged_qty,
+				rejected_qty: r.rejected_qty, discrepancy_reason: r.discrepancy_reason,
+			})),
+			get_data: () => fields[0].data,
+			fields: [
+				{ fieldname: "item_code", fieldtype: "Data", label: __("Item"), read_only: 1, in_list_view: 1, columns: 2 },
+				{ fieldname: "qty", fieldtype: "Float", label: __("Qty"), read_only: 1, in_list_view: 1, columns: 1 },
+				{ fieldname: "shortage_qty", fieldtype: "Float", label: __("Short"), in_list_view: 1, columns: 1 },
+				{ fieldname: "damaged_qty", fieldtype: "Float", label: __("Damaged"), in_list_view: 1, columns: 1 },
+				{ fieldname: "rejected_qty", fieldtype: "Float", label: __("Rejected"), in_list_view: 1, columns: 1 },
+				{
+					fieldname: "discrepancy_reason", fieldtype: "Link", label: __("Reason"),
+					options: "Gate Pass Discrepancy Reason", in_list_view: 1, columns: 3,
+				},
+				{ fieldname: "name", fieldtype: "Data", hidden: 1 },
+			],
+		},
+		{ fieldname: "notes", fieldtype: "Text", label: __("What happened"), reqd: 1 },
+	];
+
+	const dialog = new frappe.ui.Dialog({
+		title: __("Record Discrepancy"),
+		size: "large",
+		fields,
+		primary_action_label: __("Save"),
+		primary_action(values) {
+			const payload = {};
+			(values.rows || []).forEach((r) => {
+				payload[r.name] = {
+					shortage_qty: flt(r.shortage_qty), damaged_qty: flt(r.damaged_qty),
+					rejected_qty: flt(r.rejected_qty), discrepancy_reason: r.discrepancy_reason,
+				};
+			});
+			frappe.call({
+				method: "gate_pass_management.api.gate_pass.record_discrepancy",
+				args: { gate_pass: frm.doc.name, rows: JSON.stringify(payload), notes: values.notes },
+				freeze: true,
+				callback() { dialog.hide(); frm.reload_doc(); },
+			});
+		},
+	});
+	dialog.show();
+};
+
+// Where the site keeps a series per direction, the series is not the operator's
+// to choose: it follows the direction. The server applies it when the pass is
+// named; this only shows the right one before then. Values set by a pull do not
+// fire the field's own handler, so the pull calls this too.
+gatepass.sync_series = function (frm) {
+	if (!frm.is_new() || !frm.doc.direction) return;
+	frappe.call({
+		method: "gate_pass_management.api.gate_pass.get_series_for_direction",
+		args: { direction: frm.doc.direction },
+		callback({ message }) {
+			if (!message) return;
+			if (frm.doc.naming_series !== message) frm.set_value("naming_series", message);
+			frm.set_df_property("naming_series", "read_only", 1);
+		},
+	});
+};
+
+gatepass.clear_party_links = function (frm) {
+	if (frm.doc.docstatus !== 0) return;
+	["address", "address_display", "contact_person", "contact_mobile"].forEach((f) => {
+		if (frm.doc[f]) frm.set_value(f, null);
+	});
+};
+
+gatepass.drop_purpose_if_unfit = function (frm) {
+	if (!frm.doc.purpose || !frm.doc.direction || frm.doc.docstatus !== 0) return;
+	frappe.db.get_value("Gate Pass Purpose", frm.doc.purpose, "applies_to_direction").then(({ message }) => {
+		const fits = !message || !message.applies_to_direction
+			|| ["Both", frm.doc.direction].includes(message.applies_to_direction);
+		if (fits) return;
+		const purpose = frm.doc.purpose;
+		frm.set_value("purpose", null);
+		frappe.show_alert({
+			message: __("Purpose {0} does not apply to {1} passes, so it was cleared.", [purpose, __(frm.doc.direction)]),
+			indicator: "orange",
+		});
+	});
+};
+
+// The distinct source documents on the pass, in the order they were added.
+gatepass.source_documents = function (frm) {
+	return [...new Set((frm.doc.items || []).map((r) => r.source_document).filter(Boolean))];
+};
+
+gatepass.draw_source_card = function (frm, docs) {
+	const esc = frappe.utils.escape_html;
+	const slug = frappe.router.slug(frm.doc.source_doctype || "");
+	// A draft can drop a document again; a submitted pass cannot.
+	const removable = frm.doc.docstatus === 0;
+
+	const chips = docs.map((name) => `
+		<span class="gp-src-doc">
+			<a href="/desk/${slug}/${encodeURIComponent(name)}">${esc(name)}</a>
+			${removable ? `<button type="button" class="gp-src-x" data-doc="${esc(name)}"
+				title="${esc(__("Remove this document from the gate pass"))}"
+				aria-label="${esc(__("Remove {0}", [name]))}">&times;</button>` : ""}
+		</span>`).join("");
+
+	const wrapper = frm.fields_dict.source_card.$wrapper;
+	wrapper.html(`
+		<div class="gp-src-docs">${chips}</div>
+		<div class="text-muted small gp-src-note">${docs.length > 1
+			? __("{0} documents on one gate pass. All must be for the same party.", [docs.length])
+			: __("Pull another document with Get Items From, or remove this one to start over.")}</div>`);
+
+	wrapper.find(".gp-src-x").on("click", (e) => gatepass.unlink_source(frm, $(e.currentTarget).data("doc")));
+};
+
+gatepass.unlink_source = function (frm, source_document) {
+	const rows = (frm.doc.items || []).filter((r) => r.source_document === source_document);
+	frappe.confirm(
+		__("Remove {0} and its {1} item row(s) from this gate pass?", [source_document, rows.length]),
+		() => {
+			frm.doc.items = (frm.doc.items || []).filter((r) => r.source_document !== source_document);
+			frm.doc.items.forEach((r, i) => { r.idx = i + 1; });
+			rows.forEach((r) => { delete locals[r.doctype][r.name]; });
+
+			const remaining = gatepass.source_documents(frm);
+			frm.doc.source_document = remaining[0] || null;
+			frm.doc.is_multi_source = remaining.length > 1 ? 1 : 0;
+
+			// The server recalculates on save; this keeps the screen honest until then.
+			const sum = (field) => frm.doc.items.reduce((t, r) => t + flt(r[field]), 0);
+			frm.doc.total_qty = sum("qty");
+			frm.doc.total_accepted_qty = sum("accepted_qty");
+			frm.doc.total_packages = sum("packages");
+			frm.doc.total_amount = sum("amount");
+
+			frm.refresh_fields();
+			frm.trigger("render_source_card");
+			frm.dirty();
+			frappe.show_alert({
+				message: __("{0} removed. Save to keep the change.", [source_document]),
+				indicator: "orange",
+			});
+		}
+	);
+};
+
+gatepass.pick_source_document = function (frm, source) {
+	// `gate_pass_source` tells the server which flow is being picked for; it
+	// applies that flow's own filters and role gate rather than trusting ours.
+	const filters = { gate_pass_source: source.name };
+	const party_field = source.party_type && source.party_type !== "Company"
+		? frappe.scrub(source.party_type) : null;
+
+	new frappe.ui.form.MultiSelectDialog({
+		doctype: source.source_doctype,
+		target: frm,
+		setters: party_field ? { [party_field]: frm.doc.party || null } : {},
+		columns: party_field ? ["name", party_field] : ["name"],
+		// A custom query, because the ordinary list query needs read permission
+		// on the source doctype and a gate operator does not have it.
+		get_query: () => ({
+			query: "gate_pass_management.api.gate_pass.source_query",
+			filters,
+		}),
+		action(selections) {
+			if (!selections || !selections.length) return;
+			frappe.call({
+				method: "gate_pass_management.api.gate_pass.build_gate_pass",
+				args: {
+					source_type: source.name,
+					// Several documents of one party may share a pass; the server
+					// refuses a second party and a document that is already on it.
+					source_name: JSON.stringify(selections),
+					// Always send the open draft, with rows or without. Without it the
+					// server returns a brand-new pass under another name, and this form
+					// keeps showing the old one, empty.
+					target_doc: frm.doc.docstatus === 0 ? JSON.stringify(frm.doc) : null,
+				},
+				freeze: true,
+				callback({ message }) {
+					if (!message) return;
+					frappe.model.sync(message);
+					frm.refresh();
+					// The rows exist only in the browser until saved; say so.
+					frm.dirty();
+					gatepass.sync_series(frm);
+					cur_dialog && cur_dialog.hide();
+				},
+			});
+		},
+	});
+};
