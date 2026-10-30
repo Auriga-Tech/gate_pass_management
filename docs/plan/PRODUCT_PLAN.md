@@ -309,7 +309,7 @@ The gate is where shortage and damage are **discovered**. Recording it here — 
 | `stock_qty` | Float | — | RO | `qty × conversion_factor` |
 | `accepted_qty` | Float | — | R | **What is actually taken in / released.** Defaults to `qty`; this is the number that flows to the target document |
 | `shortage_qty` | Float | — | | Short-delivered against the paperwork |
-| `damaged_qty` | Float | — | | Arrived damaged — maps to `Purchase Receipt Item.rejected_qty` |
+| `damaged_qty` | Float | — | | Arrived damaged — maps to `Purchase Receipt Item.rejected_qty`; so does `rejected_qty` (Rejected at Gate), since both came through the gate |
 | `rejected_qty` | Float | — | | Refused outright at the gate |
 | `rejected_warehouse` | Link | → Warehouse | | For damaged/rejected qty on the target receipt |
 | `discrepancy_reason` | Link | → Gate Pass Discrepancy Reason | mandatory when any of the three above is non-zero | Master, so discrepancies are reportable by cause rather than by free text |

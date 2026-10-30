@@ -249,7 +249,7 @@ Open it and click **Create Purchase Receipt** (or Subcontracting Receipt, depend
 The receipt is created with:
 
 - **Accepted quantity** from the gate — what actually arrived, not what was ordered
-- **Damaged quantity** as rejected qty, in the rejected warehouse
+- **Damaged** and **Rejected at Gate** quantities as rejected qty, in the rejected warehouse
 - **Shortage**, only if your site chose to — see *Shortage and the receipt* below
 - Taxes, currency and terms from the original order, because the app uses ERPNext's own mapper
 - The **Cost Center**, if one was chosen on the gate pass. Left blank, the receipt keeps the order's own cost center; chosen, it replaces it on every line
@@ -282,7 +282,8 @@ Neither is wrong. *Not Received* keeps the stock honest and keeps the shortfall
 visible on the order until it is chased. *Book as Rejected* suits a site that
 wants every unit on the order accounted for on the receipt itself.
 
-Damaged goods are booked as rejected under both choices, and either way you need
+Damaged goods and goods rejected at the gate are booked as rejected under both
+choices, and either way you need
 a **Rejected Warehouse**, on the gate pass row or as the default in Settings.
 
 ## When quantities disagree
