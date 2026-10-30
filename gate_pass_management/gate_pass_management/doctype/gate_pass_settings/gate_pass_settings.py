@@ -7,6 +7,7 @@ from frappe import _
 from frappe.model.document import Document
 
 from gate_pass_management.rules import catalogue
+from gate_pass_management.utils import tracking
 
 # section/field                       : the setting that must be on for it to show
 HIDDEN_BY_FEATURE = {
@@ -65,16 +66,10 @@ class GatePassSettings(Document):
 		if not self.enable_tracking_id or not self.tracking_id_template:
 			return
 		try:
-			frappe.render_template(
-				self.tracking_id_template,
-				{
-					"party_code": "TEST", "party": "TEST", "reference_no": "TEST",
-					"vehicle_number": "TEST", "posting_date": "2026-01-01", "direction": "In",
-				},
-			)
-		except Exception as exc:
+			tracking.check(self.tracking_id_template)
+		except ValueError as exc:
 			frappe.throw(
-				_("Tracking ID template is not valid: {0}").format(exc),
+				_("Tracking ID template is not valid: {0}").format(str(exc)),
 				title=_("Check the template"),
 			)
 

@@ -114,14 +114,8 @@ def _lock_source_documents(source_doctype: str, names: list[str]):
 
 	timeout = _lock_timeout()
 	try:
-		frappe.db.sql(
-			"""SELECT name FROM `tab{0}` WHERE name IN %(names)s FOR UPDATE""".format(
-				frappe.db.escape_table_name(source_doctype)
-				if hasattr(frappe.db, "escape_table_name")
-				else source_doctype.replace("`", "")
-			),
-			{"names": tuple(names)},
-		)
+		source = frappe.qb.DocType(source_doctype)
+		frappe.qb.from_(source).select(source.name).where(source.name.isin(names)).for_update().run()
 	except frappe.QueryTimeoutError:
 		frappe.throw(
 			_(

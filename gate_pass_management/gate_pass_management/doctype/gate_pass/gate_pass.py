@@ -20,7 +20,7 @@ from frappe.utils import add_days, cint, flt, get_link_to_form, getdate, now_dat
 from gate_pass_management import ledger
 from gate_pass_management.compliance import runner as compliance
 from gate_pass_management.rules.engine import RuleContext
-from gate_pass_management.utils import guards
+from gate_pass_management.utils import guards, tracking
 from gate_pass_management.utils.logger import get_logger
 
 
@@ -186,10 +186,10 @@ class GatePass(Document):
 			"direction": self.direction,
 		}
 		try:
-			self.tracking_id = frappe.render_template(template, context).strip()
-		except Exception as exc:
+			self.tracking_id = tracking.render(template, context)
+		except ValueError as exc:
 			frappe.throw(
-				_("Tracking ID template could not be rendered: {0}").format(exc),
+				_("Tracking ID template could not be rendered: {0}").format(str(exc)),
 				title=_("Check Gate Pass Settings"),
 			)
 

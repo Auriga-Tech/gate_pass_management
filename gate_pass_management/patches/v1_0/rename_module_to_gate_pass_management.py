@@ -31,23 +31,22 @@ def execute():
 		frappe.new_doc("Module Def").update({"module_name": NEW, "app_name": APP}).db_insert()
 
 	for doctype, fieldname in _module_link_fields():
-		frappe.db.sql(
-			f"update `tab{doctype}` set `{fieldname}` = %s where `{fieldname}` = %s",  # nosemgrep
-			(NEW, OLD),
-		)
+		_rename(doctype, fieldname)
 
 	for doctype, fieldname in TEXT_MODULE_FIELDS:
 		# These DocTypes come and go between Frappe versions; a missing one is not
 		# a reason to abort a migration half way through.
 		if not frappe.db.exists("DocType", doctype) or not frappe.db.table_exists(doctype):
 			continue
-		frappe.db.sql(
-			f"update `tab{doctype}` set `{fieldname}` = %s where `{fieldname}` = %s",  # nosemgrep
-			(NEW, OLD),
-		)
+		_rename(doctype, fieldname)
 
 	frappe.db.delete("Module Def", {"name": OLD})
 	frappe.clear_cache()
+
+
+def _rename(doctype: str, fieldname: str):
+	table = frappe.qb.DocType(doctype)
+	frappe.qb.update(table).set(table[fieldname], NEW).where(table[fieldname] == OLD).run()
 
 
 def _module_link_fields():

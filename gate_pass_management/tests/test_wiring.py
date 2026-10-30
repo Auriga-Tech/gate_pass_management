@@ -487,3 +487,55 @@ class TestVersion(FrappeTestCase):
 		install = (APP / "setup" / "install.py").read_text(encoding="utf-8")
 		self.assertIn("__version__", install)
 		self.assertNotRegex(install, r'"version":\s*"\d', "the install log must not carry its own copy")
+
+
+class TestNoUnsafePatterns(FrappeTestCase):
+	"""The three things Frappe's security audit flags, kept out by construction.
+
+	  * `render_template` on stored text (server-side template injection): this app
+	    renders tracking ids with `utils.tracking` and email through Frappe's own
+	    Email Template, never by handing a stored string to a template engine.
+	  * an exception passed straight to `.format()`: use `str(exc)`.
+	  * SQL assembled from strings: use `frappe.qb` or bound parameters.
+	"""
+
+	EXCEPTION_NAMES = {"exc", "e", "err", "error", "ex"}
+
+	def _scan(self):
+		import ast
+
+		render, formats, sql = [], [], []
+		for path in APP.rglob("*.py"):
+			if "tests" in path.parts or "__pycache__" in path.parts:
+				continue
+			where = str(path.relative_to(APP))
+			for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+				if not isinstance(node, ast.Call):
+					continue
+				func = node.func
+				name = func.attr if isinstance(func, ast.Attribute) else getattr(func, "id", "")
+				if name == "render_template":
+					render.append(f"{where}:{node.lineno}")
+				if name == "format" and any(
+					isinstance(a, ast.Name) and a.id in self.EXCEPTION_NAMES for a in node.args
+				):
+					formats.append(f"{where}:{node.lineno}")
+				if name in ("sql", "multisql") and node.args:
+					first = node.args[0]
+					built = isinstance(first, (ast.JoinedStr, ast.BinOp)) or (
+						isinstance(first, ast.Call)
+						and isinstance(first.func, ast.Attribute)
+						and first.func.attr == "format"
+					)
+					if built:
+						sql.append(f"{where}:{node.lineno}")
+		return render, formats, sql
+
+	def test_nothing_renders_stored_text_as_a_template(self):
+		self.assertEqual(self._scan()[0], [], "use utils.tracking, or Frappe's Email Template")
+
+	def test_no_exception_is_formatted_into_a_message_directly(self):
+		self.assertEqual(self._scan()[1], [], "pass str(exc), not exc")
+
+	def test_no_sql_is_built_from_strings(self):
+		self.assertEqual(self._scan()[2], [], "use frappe.qb or bound parameters")

@@ -677,7 +677,7 @@ to make the app run.
 | **Party & Items** | **Allowed Party Types**: the only party types the Party Type field offers, and any other is refused on save (leave it empty to allow all; the Default Party Type must be one of them); whether free-text items are permitted; *Hide Fully Gate-Passed Documents in the Picker* (on by default) leaves orders out of the Get Items From list once every line has been passed |
 | **Required Fields** | Which fields are compulsory — vehicle, driver, location, photo, and so on |
 | **Features** | Switches for returnable tracking, discrepancy, compliance, charges, weighbridge, batch/serial |
-| **Tracking ID** | An optional reference built from a template |
+| **Tracking ID** | An optional reference built from a template of `{{ party_code }}`, `{{ party }}`, `{{ reference_no }}`, `{{ vehicle_number }}`, `{{ posting_date }}` and `{{ direction }}` placeholders. Anything else is refused |
 | **Returnable** | Default return window, reminders, who gets escalations |
 | **Discrepancy** | Whether damage may be recorded after submission, and who may |
 | **Compliance** | Whether to block when a provider is unreachable, who may override |

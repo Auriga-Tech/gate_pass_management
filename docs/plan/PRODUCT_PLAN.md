@@ -216,7 +216,7 @@ Legend: **R** reqd · **RO** read-only · **H** hidden · `→` Link target · `
 | `is_multi_source` | Check | — | RO | Set when rows span >1 source document |
 | `reference_no` | Data | — | R if `Settings.require_reference_no` | Supplier invoice / challan / DC / LR |
 | `reference_date` | Date | — | | Cannot be future (V-3) |
-| `tracking_id` | Data | — | RO | Rendered once from a Jinja template (§10.3); unique if configured |
+| `tracking_id` | Data | — | RO | Rendered once from a placeholder template (§10.3); unique if configured |
 
 #### Section — Vehicle & Transport
 | Fieldname | Type | Options / → | Flags |
@@ -373,8 +373,8 @@ Three layers, each owning a different kind of decision.
 
 **Tab: Feature Toggles** — `enable_returnable`, `enable_charges`, `enable_valuation`, `enable_weighbridge`, `enable_batch_serial`, `enable_cost_center`, `enable_security_officer`, `enable_eway_bill`, `enable_qr_code`, `enable_mobile_console` *(v1.1)*, `enable_people_tracking` *(v1.1)* (all Check).
 
-**Tab: Tracking ID** — `enable_tracking_id` (Check) · `tracking_id_template` (Code, Jinja; default `{{ party_code }}/{{ reference_no }}`) · `tracking_id_unique` (Check) · `tracking_id_inherit_field` (Data — fieldname on the source doc to inherit from instead of rendering).
-The template is rendered **once, in `before_insert`, inside a sandboxed Jinja environment**, and is thereafter immutable. Rendering failure raises a validation error naming the template — it does not silently produce an empty string.
+**Tab: Tracking ID** — `enable_tracking_id` (Check) · `tracking_id_template` (Code, `{{ field }}` placeholders only; default `{{ party_code }}/{{ reference_no }}`) · `tracking_id_unique` (Check) · `tracking_id_inherit_field` (Data — fieldname on the source doc to inherit from instead of rendering).
+The template is rendered **once, in `before_insert`**, by plain placeholder substitution (`party_code`, `party`, `reference_no`, `vehicle_number`, `posting_date`, `direction`), never by a template engine, so stored text cannot run code. Anything other than those placeholders is refused when the setting is saved. It is thereafter immutable. Rendering failure raises a validation error naming the template — it does not silently produce an empty string.
 
 **Tab: Rules** — child table `Gate Pass Rule`, one row per configurable rule: `rule_code` · `rule_name` · `category` · `description` · `default_action` · **`action` (Block/Warn/Ignore)** · `can_ignore` · `applies_to_direction` · `applies_to_gate_pass_type` · `bypass_roles` · `require_override_reason` · `custom_message` · `threshold`. Rows are seeded and reconciled by `after_migrate` — new rules in future versions appear at their defaults, and a customer's edits are never overwritten. Specified in `GATE_PASS_CONFIG_REFERENCE.md` §A.5.
 

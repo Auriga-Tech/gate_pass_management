@@ -64,11 +64,16 @@ def _send(settings, subject: str, intro: str, doc):
 
 	try:
 		if settings.email_template:
-			template = frappe.get_doc("Email Template", settings.email_template)
-			rendered = frappe.render_template(
-				template.response_html or template.response, {"doc": doc, "intro": intro}
+			# Frappe's own Email Template rendering, not ours: the template is a stored
+			# record that its editors are trusted with, and Frappe renders it in its
+			# sandbox. The document's fields are available directly ({{ party }}) and as
+			# `doc` ({{ doc.party }}), alongside the `intro` sentence.
+			fields = doc.as_dict() if hasattr(doc, "as_dict") else dict(doc)
+			formatted = frappe.get_doc("Email Template", settings.email_template).get_formatted_email(
+				{**fields, "doc": fields, "intro": intro}
 			)
-			subject = frappe.render_template(template.subject, {"doc": doc}) or subject
+			rendered = formatted["message"]
+			subject = formatted["subject"] or subject
 		else:
 			rendered = _default_body(intro, doc)
 

@@ -90,7 +90,7 @@ class GatePassSource(Document):
 			except ValueError as exc:
 				frappe.throw(
 					_("{0} is not valid JSON: {1}").format(
-						frappe.bold(frappe.unscrub(fieldname)), exc
+						frappe.bold(frappe.unscrub(fieldname)), str(exc)
 					)
 				)
 

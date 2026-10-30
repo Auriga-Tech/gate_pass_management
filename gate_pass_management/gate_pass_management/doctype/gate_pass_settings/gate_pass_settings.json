@@ -423,10 +423,10 @@
   {
    "fieldname": "tracking_id_template",
    "fieldtype": "Code",
-   "label": "Template (Jinja)",
+   "label": "Tracking ID Template",
    "default": "{{ party_code }}/{{ reference_no }}",
    "depends_on": "enable_tracking_id",
-   "description": "Rendered once when the gate pass is created, then frozen. Available: party_code, party, reference_no, vehicle_number, posting_date."
+   "description": "Plain text with placeholders, rendered once when the gate pass is created and then frozen. Available: {{ party_code }}, {{ party }}, {{ reference_no }}, {{ vehicle_number }}, {{ posting_date }}, {{ direction }}. Nothing else is allowed."
   },
   {
    "fieldname": "tracking_id_inherit_field",
@@ -767,7 +767,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-10-30 21:30:00.000000",
+ "modified": "2026-10-31 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Gate Pass Management",
  "name": "Gate Pass Settings",
