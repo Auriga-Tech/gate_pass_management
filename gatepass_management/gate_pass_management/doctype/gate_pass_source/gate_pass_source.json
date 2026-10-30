@@ -8,6 +8,7 @@
  "field_order": [
   "sb_identity",
   "source_name",
+  "flow_code",
   "button_label",
   "enabled",
   "cb_identity",
@@ -87,7 +88,16 @@
    "label": "Name",
    "reqd": 1,
    "in_list_view": 1,
-   "description": "How this flow is described to users, e.g. 'Purchase Order — Inward'."
+   "description": "How this flow is described to users, e.g. 'Purchase Order - Inward'. Free to reword at any time; it is a label, not the identity."
+  },
+  {
+   "fieldname": "flow_code",
+   "fieldtype": "Data",
+   "label": "Flow Code",
+   "reqd": 1,
+   "unique": 1,
+   "set_only_once": 1,
+   "description": "The permanent identity of this flow, e.g. 'PO-IN'. Every gate pass created from it stores this code, so it is fixed once saved. Short and uppercase by convention."
   },
   {
    "fieldname": "button_label",
@@ -485,7 +495,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-05 10:00:00.000000",
+ "modified": "2026-10-30 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Gate Pass Management",
  "name": "Gate Pass Source",
@@ -528,9 +538,10 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "autoname": "field:source_name",
+ "autoname": "field:flow_code",
  "naming_rule": "By fieldname",
  "title_field": "source_name",
- "search_fields": "source_doctype,direction",
+ "search_fields": "source_name,source_doctype,direction",
+ "show_title_field_in_link": 1,
  "track_changes": 1
 }

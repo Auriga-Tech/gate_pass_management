@@ -135,7 +135,8 @@ CUSTOM_FIELDS = {
 
 STANDARD_SOURCES = [
 	{
-		"source_name": "Purchase Order — Inward",
+		"source_name": "Purchase Order - Inward",
+		"flow_code": "PO-IN",
 		"button_label": "Purchase Order",
 		"direction": "In",
 		"sequence": 10,
@@ -168,7 +169,8 @@ STANDARD_SOURCES = [
 		],
 	},
 	{
-		"source_name": "Subcontracting Order — Finished Goods Inward",
+		"source_name": "Subcontracting Order - Finished Goods Inward",
+		"flow_code": "SCO-FG-IN",
 		"button_label": "Subcontracting Order (Finished Goods)",
 		"direction": "In",
 		"sequence": 20,
@@ -196,7 +198,8 @@ STANDARD_SOURCES = [
 		"description": "Finished goods returning from a subcontractor.",
 	},
 	{
-		"source_name": "Subcontracting Order — Raw Material Outward",
+		"source_name": "Subcontracting Order - Raw Material Outward",
+		"flow_code": "SCO-RM-OUT",
 		"button_label": "Subcontracting Order (Raw Material)",
 		"direction": "Out",
 		"sequence": 30,
@@ -221,7 +224,8 @@ STANDARD_SOURCES = [
 		               "material is most often lost, which is why it gets its own flow.",
 	},
 	{
-		"source_name": "Stock Entry — Send to Subcontractor",
+		"source_name": "Stock Entry - Send to Subcontractor",
+		"flow_code": "SE-SUBCON-OUT",
 		"button_label": "Stock Entry (Send to Subcontractor)",
 		"direction": "Out",
 		"sequence": 40,
@@ -246,7 +250,8 @@ STANDARD_SOURCES = [
 		               "the gate only has to add vehicle and driver and confirm.",
 	},
 	{
-		"source_name": "Stock Entry — Transit Outward",
+		"source_name": "Stock Entry - Transit Outward",
+		"flow_code": "SE-TRANSIT-OUT",
 		"button_label": "Stock Entry (Material Transfer)",
 		"direction": "Out",
 		"sequence": 50,
@@ -269,7 +274,8 @@ STANDARD_SOURCES = [
 		"description": "Material leaving for another plant or branch.",
 	},
 	{
-		"source_name": "Stock Entry — Transit Inward",
+		"source_name": "Stock Entry - Transit Inward",
+		"flow_code": "SE-TRANSIT-IN",
 		"button_label": "Stock Entry (Incoming Transfer)",
 		"direction": "In",
 		"sequence": 60,
@@ -289,7 +295,8 @@ STANDARD_SOURCES = [
 		"description": "Material arriving from another plant against an in-transit stock entry.",
 	},
 	{
-		"source_name": "Stock Entry — Manual Return Inward",
+		"source_name": "Stock Entry - Manual Return Inward",
+		"flow_code": "SE-RETURN-IN",
 		"button_label": "Return Against an Outbound Transfer",
 		"direction": "In",
 		"sequence": 70,
@@ -311,7 +318,8 @@ STANDARD_SOURCES = [
 		               "actually arrived. Common, and the flow most systems have no answer for.",
 	},
 	{
-		"source_name": "Purchase Receipt — Return Outward",
+		"source_name": "Purchase Receipt - Return Outward",
+		"flow_code": "PR-RETURN-OUT",
 		"button_label": "Purchase Receipt (Return of Goods)",
 		"direction": "Out",
 		"sequence": 80,
@@ -338,7 +346,8 @@ STANDARD_SOURCES = [
 		],
 	},
 	{
-		"source_name": "Subcontracting Receipt — Return Outward",
+		"source_name": "Subcontracting Receipt - Return Outward",
+		"flow_code": "SCR-RETURN-OUT",
 		"button_label": "Subcontracting Receipt (Return)",
 		"direction": "Out",
 		"sequence": 90,
@@ -358,7 +367,8 @@ STANDARD_SOURCES = [
 		"allow_discrepancy": 0,
 	},
 	{
-		"source_name": "Sales Invoice — Dispatch",
+		"source_name": "Sales Invoice - Dispatch",
+		"flow_code": "SI-OUT",
 		"button_label": "Sales Invoice",
 		"direction": "Out",
 		"sequence": 100,
@@ -393,7 +403,8 @@ STANDARD_SOURCES = [
 		],
 	},
 	{
-		"source_name": "Delivery Note — Dispatch",
+		"source_name": "Delivery Note - Dispatch",
+		"flow_code": "DN-OUT",
 		"button_label": "Delivery Note",
 		"direction": "Out",
 		"sequence": 110,
@@ -418,7 +429,8 @@ STANDARD_SOURCES = [
 		],
 	},
 	{
-		"source_name": "Gate Pass — Return Leg Inward",
+		"source_name": "Gate Pass - Return Leg Inward",
+		"flow_code": "GP-RETURN-IN",
 		"button_label": "Returning Gate Pass (Out)",
 		"direction": "In",
 		"sequence": 120,
@@ -449,25 +461,33 @@ def seed_sources():
 	sites — but only the fields that describe *how the mapping works*. Anything
 	a customer would reasonably tune (enforcement, checklists, compliance
 	actions) is written on first insert and never touched again.
+
+	Matching is on `flow_code`, which is the record name. It must never be the
+	display label: the label is prose, it has been reworded once already, and
+	every gate pass stores this value in `source_type`. Keyed on the label, a
+	rewording inserts twelve new flows, orphans the twelve old ones, and breaks
+	`source_type` on every pass ever created. Keyed on the code, rewording a
+	label is an ordinary edit that reaches existing sites through `refreshable`.
 	"""
 	from gatepass_management.utils.logger import get_logger
 
 	refreshable = {
-		"button_label", "child_table", "item_field", "qty_field", "consumed_field",
-		"uom_field", "rate_field", "warehouse_field", "bom_field", "pending_formula",
-		"party_type", "party_field", "row_columns", "sequence", "description",
+		"source_name", "button_label", "child_table", "item_field", "qty_field",
+		"consumed_field", "uom_field", "rate_field", "warehouse_field", "bom_field",
+		"pending_formula", "party_type", "party_field", "row_columns", "sequence",
+		"description",
 	}
 
 	created = 0
 	for spec in STANDARD_SOURCES:
-		name = spec["source_name"]
+		code = spec["flow_code"]
 		children = {
 			"checklist": spec.pop("checklist", None),
 			"compliance_rules": spec.pop("compliance_rules", None),
 		}
 
-		if frappe.db.exists("Gate Pass Source", name):
-			doc = frappe.get_doc("Gate Pass Source", name)
+		if frappe.db.exists("Gate Pass Source", code):
+			doc = frappe.get_doc("Gate Pass Source", code)
 			if not doc.is_standard:
 				# The customer has taken ownership of this record. Leave it be.
 				_restore(spec, children)

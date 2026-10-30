@@ -394,9 +394,12 @@ Unconditional rules are materialised as **Property Setters** on `Settings.on_upd
 
 **This is the heart of the product.** One record per (source document, direction, sub-type). Ships with 8 pre-seeded records covering the common flows; an implementer adds more without code.
 
+**The record is named after `flow_code`, never after the display label.** The label is prose, it gets reworded, and `Gate Pass.source_type` stores the record name on every pass ever created. Keyed on the label, a rewording inserts a fresh set of flows, orphans the old set, and breaks `source_type` on all historic passes — it becomes a `rename_doc` migration rather than an edit. Keyed on a code, rewording a label is an ordinary field change that reaches existing sites through the standard-record refresh. `seed_sources` matches on the code for the same reason.
+
 | Fieldname | Type | Purpose |
 |---|---|---|
-| `source_name` | Data (name) | e.g. "Purchase Order — Inward" |
+| `flow_code` | Data (**the record name**, unique, set-only-once) | e.g. `PO-IN`. The flow's permanent identity; `Gate Pass.source_type` stores this |
+| `source_name` | Data (title field) | e.g. "Purchase Order - Inward". A display label only, free to reword at any time |
 | `enabled` | Check | |
 | `direction` | Select `In`/`Out` | Which direction this source appears under |
 | `source_doctype` | Link → DocType | |
@@ -448,7 +451,7 @@ Unconditional rules are materialised as **Property Setters** on `Settings.on_upd
 | 1 | Purchase Order | In | Editable | The core inbound flow |
 | 2 | Subcontracting Order (Finished Goods) | In | Editable | |
 | 3 | Subcontracting Order (RM Return) | Out | Editable | |
-| 4 | Stock Entry — Send to Subcontractor | Out | Locked to Source | `auto_create_draft` on |
+| 4 | Stock Entry - Send to Subcontractor | Out | Locked to Source | `auto_create_draft` on |
 | 5 | Stock Entry — Material Transfer (transit out) | Out | Locked to Source | `auto_create_draft` on |
 | 6 | Stock Entry — return (transit in) | In | Prefilled, Editable | Direction auto-derived |
 | 7 | **Stock Entry — outbound reference, manual return** | In | Editable | **Material comes back before any return Stock Entry exists.** The guard references the *original outbound* Stock Entry and enters quantities by hand. Common and, until now, missing from the plan. |

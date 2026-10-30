@@ -526,6 +526,24 @@ shortens the guard's menu, which is a real kindness at a busy gate.
 
 You only meet these if you are creating or adjusting one.
 
+**What it is called**
+
+| Setting | In plain words |
+|---|---|
+| Name | How the flow is described on screen, e.g. "Purchase Order - Inward" |
+| Flow Code | Its permanent identity, e.g. `PO-IN` |
+| Button Label | The wording under *Get Items From* on the gate pass |
+
+The **Name** is just a label. Reword it whenever you like — nothing breaks.
+
+The **Flow Code** is different: it is the flow's real identity, and every gate
+pass created from it stores this code. That is why the form will not let you
+change a code once the record is saved. Keep codes short and uppercase.
+
+If you create your own flow, you choose its code. Anything unused works; the
+shipped ones follow a document-then-direction pattern (`PO-IN`, `DN-OUT`,
+`SCO-RM-OUT`) which is worth copying so a list of codes stays readable.
+
 **Where to read the data**
 
 | Setting | In plain words |
@@ -650,7 +668,7 @@ Resolution: **global preset → per-rule → per-flow override → bypass role**
 You want over-quantity blocked for inward receipts, warned for outward deliveries, and bypassed by the plant manager:
 
 1. Settings → Rules → `QTY-LEDGER` → Action **Block**, Bypass Roles **Gate Pass Manager**.
-2. Gate Pass Source "Delivery Note — Dispatch" → Rule Overrides → `QTY-LEDGER` → **Warn**.
+2. Gate Pass Source "Delivery Note - Dispatch" → Rule Overrides → `QTY-LEDGER` → **Warn**.
 
 A guard on a purchase order is blocked. The plant manager is warned and must give a reason. Delivery notes never block.
 
@@ -715,7 +733,7 @@ Include: the gate pass number, the exact error text, the trace ID, what you were
 | **Advisory mode** | Preset where rules warn but do not block. The shipped default. |
 | **Consumption ledger** | How the app tracks what has already been gate passed against each order line. |
 | **Direction** | In or Out. Derived from the source flow. |
-| **Gate Pass Source** | A configured flow, e.g. "Purchase Order — Inward". |
+| **Gate Pass Source** | A configured flow, e.g. "Purchase Order - Inward". |
 | **Pending Qty** | Still expected: ordered minus already received or gate passed. |
 | **Source Row** | The exact order line a gate pass row draws on. |
 | **Target document** | What a gate pass produces — a receipt, transfer or delivery note. |

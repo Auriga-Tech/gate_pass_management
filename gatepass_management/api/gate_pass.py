@@ -37,9 +37,9 @@ def list_sources(direction: str | None = None, source_doctype: str | None = None
 	for source in frappe.get_all(
 		"Gate Pass Source",
 		filters=filters,
-		fields=["name", "button_label", "direction", "source_doctype", "sub_type",
-		        "sequence", "allow_row_selection", "row_columns", "dialog_fields",
-		        "source_filters", "party_type", "qty_policy"],
+		fields=["name", "source_name", "button_label", "direction", "source_doctype",
+		        "sub_type", "sequence", "allow_row_selection", "row_columns",
+		        "dialog_fields", "source_filters", "party_type", "qty_policy"],
 		order_by="sequence asc, source_name asc",
 	):
 		if not _flow_roles_allow(source.name):
@@ -178,13 +178,17 @@ def source_query(doctype, txt, searchfield, start, page_len, filters):
 		frappe.throw(_("No Gate Pass Source given."))
 
 	config = frappe.get_cached_doc("Gate Pass Source", flow)
+	# `source_name` in the message, not `name`: the record is keyed on a code
+	# like PO-IN, which is not what the flow is called on screen.
 	if config.source_doctype != doctype:
 		frappe.throw(
-			_("{0} does not draw from {1}.").format(config.name, _(doctype)), frappe.PermissionError
+			_("{0} does not draw from {1}.").format(config.source_name, _(doctype)),
+			frappe.PermissionError,
 		)
 	if not frappe.has_permission("Gate Pass", "create") or not _flow_roles_allow(config.name):
 		frappe.throw(
-			_("You do not have permission to use {0}.").format(config.name), frappe.PermissionError
+			_("You do not have permission to use {0}.").format(config.source_name),
+			frappe.PermissionError,
 		)
 
 	meta = frappe.get_meta(doctype)

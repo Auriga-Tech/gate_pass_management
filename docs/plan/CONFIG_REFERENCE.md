@@ -40,7 +40,7 @@ Four layers, most specific wins:
 |---|---|---|
 | Global preset | `Balanced` | Warn |
 | Per-rule | `QTY-LEDGER` = Block | **Block** |
-| Per-source override | "Delivery Note — Outward" = Warn | Block for all flows; **Warn** for DN outward |
+| Per-source override | "Delivery Note - Outward" = Warn | Block for all flows; **Warn** for DN outward |
 | Bypass role | `Gate Pass Manager` | Block for everyone; **Warn** for a Gate Pass Manager |
 
 Net effect: a guard creating a PO inward pass is blocked at over-quantity; the plant manager is warned and can proceed with a recorded reason; and outward delivery passes never block anyone.
