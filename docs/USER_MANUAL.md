@@ -447,8 +447,15 @@ hours, and name a default security officer.
 
 ## Gate Pass Purpose
 
-A short label for why something is moving: *Job Work*, *Repair*, *Sample*,
-*Scrap Sale*, *Inter-Branch Transfer*.
+A short label for why something is moving.
+
+Fifteen are created for you: Purchase Delivery, Sales Dispatch, Job Work - Send
+to Subcontractor, Job Work - Receive Back, Stock Transfer, Customer Return,
+Supplier Return, Sample Dispatch, Repair and Maintenance, Returned After Repair,
+Tools, Dies and Cylinders on Loan, Scrap Disposal, Asset Movement, Visitor or
+Vendor Visit, Vehicle Entry Only. Add your own, or mark any you do not use as
+inactive. Each one records a direction and a default pass type; these are kept
+for reporting and do not yet change what the gate pass form does.
 
 Nothing depends on it. It exists so you can filter and group later — "show me
 everything that went out for repair last quarter". Skip it until you want that.
