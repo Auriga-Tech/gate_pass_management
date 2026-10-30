@@ -13,6 +13,7 @@ from __future__ import annotations
 import frappe
 from frappe import _
 
+from gatepass_management import __version__
 from gatepass_management.rules import catalogue
 from gatepass_management.setup import fixtures
 from gatepass_management.utils.logger import get_logger
@@ -26,7 +27,7 @@ def after_install():
 	fixtures.seed_sources()
 	fixtures.seed_masters()
 	# No commit here: `bench install-app` commits when the install finishes.
-	get_logger().info("app_installed", extra={"version": "1.0.0-dev"})
+	get_logger().info("app_installed", extra={"version": __version__})
 
 
 def after_migrate():

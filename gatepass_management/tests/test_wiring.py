@@ -473,3 +473,15 @@ class TestNothingIsTranslatedAtImport(FrappeTestCase):
 
 	def test_no_translation_call_runs_at_import(self):
 		self.assertEqual(self._import_time_calls(), [], "use _lt, or move the call into a function")
+
+
+class TestVersion(FrappeTestCase):
+	def test_it_is_a_release_version_and_the_install_log_reads_it(self):
+		import re
+
+		import gatepass_management
+
+		self.assertRegex(gatepass_management.__version__, r"^\d+\.\d+\.\d+$", "no -dev suffix on a release")
+		install = (APP / "setup" / "install.py").read_text(encoding="utf-8")
+		self.assertIn("__version__", install)
+		self.assertNotRegex(install, r'"version":\s*"\d', "the install log must not carry its own copy")
