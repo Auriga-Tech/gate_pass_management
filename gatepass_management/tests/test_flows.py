@@ -19,6 +19,7 @@ from gatepass_management.tests.utils import (
 	ITEM,
 	ITEM_B,
 	SUPPLIER,
+	ensure_cost_center,
 	ensure_masters,
 	gate_pass_from_source,
 	make_gate_pass,
@@ -141,6 +142,35 @@ class TestPurchaseFlow(FlowTest):
 
 		gp.reload()
 		self.assertLess(flt(gp.per_processed), 100, "a cancelled receipt releases the pass")
+
+
+class TestCostCenter(FlowTest):
+	def pass_with(self, po, cost_center=None):
+		gp = gate_pass_from_source(self.flow, po.name)
+		gp.cost_center = cost_center
+		gp.vehicle_number, gp.driver_name = "GP-FLOW-0002", "Test Driver"
+		gp.flags.ignore_permissions = True
+		gp.insert(ignore_permissions=True)
+		gp.submit()
+		return gp
+
+	def receipt(self, gp):
+		return frappe.get_doc("Purchase Receipt", create_target(gp.name, "Purchase Receipt")["created"][0])
+
+	def test_the_chosen_cost_center_reaches_the_receipt_rows(self):
+		"""Purchase Receipt holds its cost center on the rows alone."""
+		chosen = ensure_cost_center(self.masters)
+		po = make_purchase_order(self.masters, [(ITEM, 10)])
+		self.assertNotEqual(po.items[0].cost_center, chosen, "premise: the order carries another")
+
+		pr = self.receipt(self.pass_with(po, chosen))
+		self.assertEqual([row.cost_center for row in pr.items], [chosen])
+
+	def test_left_blank_the_orders_own_cost_center_is_kept(self):
+		"""No choice on the gate pass means ERPNext's mapper stands."""
+		po = make_purchase_order(self.masters, [(ITEM, 10)])
+		pr = self.receipt(self.pass_with(po))
+		self.assertEqual(pr.items[0].cost_center, po.items[0].cost_center)
 
 
 class TestCancellingAReceipt(FlowTest):

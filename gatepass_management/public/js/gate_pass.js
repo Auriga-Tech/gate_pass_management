@@ -9,6 +9,9 @@ frappe.ui.form.on("Gate Pass", {
 		frm.set_query("gate", () => ({ filters: { is_active: 1, location: frm.doc.location || undefined } }));
 		frm.set_query("location", () => ({ filters: { is_active: 1 } }));
 		frm.set_query("transporter", () => ({ filters: { is_transporter: 1 } }));
+		// A cost center from another company is refused by ERPNext when the target
+		// is created, a long way from where it was chosen.
+		frm.set_query("cost_center", () => ({ filters: { company: frm.doc.company, is_group: 0 } }));
 		frm.set_query("discrepancy_reason", "items", () => ({ filters: { is_active: 1 } }));
 	},
 

@@ -68,6 +68,32 @@ def ensure_masters() -> dict:
 	return {"company": company, "abbr": abbr, "stores": stores, "rejected": rejected}
 
 
+def ensure_cost_center(masters: dict) -> str:
+	"""A leaf cost center that is not the company's default.
+
+	Not the default on purpose: the purchase order already carries the default
+	onto the receipt, so a test using it could not tell "the gate pass cost
+	center arrived" from "ERPNext's own mapper put it there".
+	"""
+	name = f"{PREFIX} CC - {masters['abbr']}"
+	if not frappe.db.exists("Cost Center", name):
+		parent = frappe.db.get_value(
+			"Cost Center",
+			{"company": masters["company"], "is_group": 1, "parent_cost_center": ["in", ["", None]]},
+			"name",
+		)
+		frappe.get_doc(
+			{
+				"doctype": "Cost Center",
+				"cost_center_name": f"{PREFIX} CC",
+				"company": masters["company"],
+				"parent_cost_center": parent,
+				"is_group": 0,
+			}
+		).insert(ignore_permissions=True)
+	return name
+
+
 def _make_company() -> str:
 	doc = frappe.get_doc(
 		{
