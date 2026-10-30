@@ -674,7 +674,7 @@ to make the app run.
 | **General** | The master **Enabled** switch, the enforcement preset, and the date from which rules apply |
 | **Naming** | The numbering series for gate passes. With *Separate Series by Direction* on, an inward pass is always numbered from the Inward series and an outward pass from the Outward series; the Series field on the form follows the direction and cannot be changed by hand |
 | **Dating** | How far back or forward a gate pass may be dated |
-| **Party & Items** | Which party types are allowed; whether free-text items are permitted; *Hide Fully Gate-Passed Documents in the Picker* (on by default) leaves orders out of the Get Items From list once every line has been passed |
+| **Party & Items** | **Allowed Party Types**: the only party types the Party Type field offers, and any other is refused on save (leave it empty to allow all; the Default Party Type must be one of them); whether free-text items are permitted; *Hide Fully Gate-Passed Documents in the Picker* (on by default) leaves orders out of the Get Items From list once every line has been passed |
 | **Required Fields** | Which fields are compulsory — vehicle, driver, location, photo, and so on |
 | **Features** | Switches for returnable tracking, discrepancy, compliance, charges, weighbridge, batch/serial |
 | **Tracking ID** | An optional reference built from a template |
