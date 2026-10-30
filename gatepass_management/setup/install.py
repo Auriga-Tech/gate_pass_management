@@ -95,8 +95,24 @@ def delete_custom_fields():
 # ------------------------------------------------------------- settings
 
 
+# Features switches added after 1.0.0. A Single that was saved before the field
+# existed has no value for it, which reads as off — and an off Features switch
+# hides its field, so the operator would be left with no way to bring it back.
+# Only a field that has never been stored is seeded; a deliberate 0 is a
+# customer decision and stays.
+NEW_FEATURE_DEFAULTS = {
+	"enable_security_officer": 1,
+	"enable_eway_bill": 1,
+}
+
+
 def seed_settings():
 	settings = frappe.get_single("Gate Pass Settings")
+
+	stored = frappe.db.get_singles_dict("Gate Pass Settings")
+	for fieldname, default in NEW_FEATURE_DEFAULTS.items():
+		if stored.get(fieldname) is None:
+			settings.set(fieldname, default)
 
 	if not settings.get("allowed_party_types"):
 		for party_type in ("Supplier", "Customer", "Company"):

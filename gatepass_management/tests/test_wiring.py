@@ -21,6 +21,9 @@ import re
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
+from gatepass_management.gate_pass_management.doctype.gate_pass_settings.gate_pass_settings import (
+	HIDDEN_BY_FEATURE,
+)
 from gatepass_management.rules import catalogue
 
 APP = pathlib.Path(frappe.get_app_path("gatepass_management"))
@@ -69,6 +72,42 @@ class TestSettingsAreWired(FrappeTestCase):
 			"These Gate Pass Settings fields are never read by any code:\n  "
 			+ "\n  ".join(dead)
 			+ "\n\nWire them up, or remove them so the page stops promising them.",
+		)
+
+
+class TestFeatureVisibilityIsWired(FrappeTestCase):
+	"""The Features switches that hide form fields must name real things.
+
+	`_apply_feature_visibility` reads `self.get(setting)`, so a setting that is
+	not a field on Gate Pass Settings reads as None and the field it guards is
+	hidden on every install with nothing to turn it back on. Security Officer
+	and E-Way Bill No were invisible this way from the first install.
+	"""
+
+	def test_every_feature_setting_exists_on_settings(self):
+		known = {
+			f["fieldname"] for f in _doctype_json("Gate Pass Settings")["fields"]
+		}
+		missing = sorted({s for s in HIDDEN_BY_FEATURE.values() if s not in known})
+		self.assertEqual(
+			missing,
+			[],
+			"HIDDEN_BY_FEATURE names settings that are not fields on Gate Pass "
+			"Settings, so the fields they guard are always hidden:\n  "
+			+ "\n  ".join(missing),
+		)
+
+	def test_every_guarded_field_exists(self):
+		missing = [
+			f"{doctype}.{fieldname}"
+			for doctype, fieldname in HIDDEN_BY_FEATURE
+			if not frappe.get_meta(doctype).has_field(fieldname)
+		]
+		self.assertEqual(
+			missing,
+			[],
+			"HIDDEN_BY_FEATURE guards fields that do not exist, so the Property "
+			"Setter is written against nothing:\n  " + "\n  ".join(missing),
 		)
 
 

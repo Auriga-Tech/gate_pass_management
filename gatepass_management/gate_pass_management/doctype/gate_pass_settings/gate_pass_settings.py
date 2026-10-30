@@ -8,6 +8,26 @@ from frappe.model.document import Document
 
 from gatepass_management.rules import catalogue
 
+# section/field                       : the setting that must be on for it to show
+HIDDEN_BY_FEATURE = {
+	("Gate Pass", "sb_discrepancy"): "enable_discrepancy",
+	("Gate Pass Item", "sb_disc"): "enable_discrepancy",
+	("Gate Pass Item", "sb_disc2"): "enable_discrepancy",
+	("Gate Pass", "sb_charges"): "enable_charges",
+	("Gate Pass", "sb_weight"): "enable_weighbridge",
+	("Gate Pass", "sb_returnable"): "enable_returnable",
+	("Gate Pass", "sb_compliance"): "enable_compliance_checks",
+	("Gate Pass", "cost_center"): "enable_cost_center",
+	("Gate Pass", "security_officer"): "enable_security_officer",
+	("Gate Pass", "eway_bill_no"): "enable_eway_bill",
+	("Gate Pass", "total_amount"): "enable_valuation",
+	("Gate Pass Item", "sb_value"): "enable_valuation",
+	("Gate Pass Item", "packages"): "enable_packages",
+	("Gate Pass", "total_packages"): "enable_packages",
+	("Gate Pass Item", "batch_no"): "enable_batch_serial",
+	("Gate Pass Item", "serial_no"): "enable_batch_serial",
+}
+
 
 class GatePassSettings(Document):
 	def validate(self):
@@ -75,30 +95,14 @@ class GatePassSettings(Document):
 		off. A Property Setter is used rather than `depends_on` because these are
 		site-wide decisions, not per-document ones, and the field should not
 		reappear when some other value on the form changes.
+
+		The map lives at module level so test_wiring can check that every name
+		in it is real: a setting that does not exist reads as None here, which
+		hides the field on every site with no way to bring it back.
 		"""
 		from frappe.custom.doctype.property_setter.property_setter import make_property_setter
 
-		hidden_by_feature = {
-			# section/field            : the setting that must be on for it to show
-			("Gate Pass", "sb_discrepancy"): "enable_discrepancy",
-			("Gate Pass Item", "sb_disc"): "enable_discrepancy",
-			("Gate Pass Item", "sb_disc2"): "enable_discrepancy",
-			("Gate Pass", "sb_charges"): "enable_charges",
-			("Gate Pass", "sb_weight"): "enable_weighbridge",
-			("Gate Pass", "sb_returnable"): "enable_returnable",
-			("Gate Pass", "sb_compliance"): "enable_compliance_checks",
-			("Gate Pass", "cost_center"): "enable_cost_center",
-			("Gate Pass", "security_officer"): "enable_security_officer",
-			("Gate Pass", "eway_bill_no"): "enable_eway_bill",
-			("Gate Pass", "total_amount"): "enable_valuation",
-			("Gate Pass Item", "sb_value"): "enable_valuation",
-			("Gate Pass Item", "packages"): "enable_packages",
-			("Gate Pass", "total_packages"): "enable_packages",
-			("Gate Pass Item", "batch_no"): "enable_batch_serial",
-			("Gate Pass Item", "serial_no"): "enable_batch_serial",
-		}
-
-		for (doctype, fieldname), setting in hidden_by_feature.items():
+		for (doctype, fieldname), setting in HIDDEN_BY_FEATURE.items():
 			make_property_setter(
 				doctype, fieldname, "hidden", 0 if self.get(setting) else 1, "Check",
 				validate_fields_for_doctype=False,

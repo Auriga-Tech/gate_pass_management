@@ -44,12 +44,14 @@
   "enable_returnable",
   "enable_discrepancy",
   "enable_compliance_checks",
+  "enable_eway_bill",
   "enable_charges",
   "enable_valuation",
   "cb_features",
   "enable_weighbridge",
   "enable_batch_serial",
   "enable_cost_center",
+  "enable_security_officer",
   "enable_qr_code",
   "enable_packages",
   "sb_tracking",
@@ -335,6 +337,13 @@
    "default": "1"
   },
   {
+   "fieldname": "enable_eway_bill",
+   "fieldtype": "Check",
+   "label": "E-Way Bill No",
+   "default": "1",
+   "description": "A field on the gate pass for the number the gate is handed on paper. Numbers read back from the source document are the Statutory Compliance Checks above."
+  },
+  {
    "fieldname": "enable_charges",
    "fieldtype": "Check",
    "label": "Charges"
@@ -362,6 +371,13 @@
    "fieldname": "enable_cost_center",
    "fieldtype": "Check",
    "label": "Cost Center"
+  },
+  {
+   "fieldname": "enable_security_officer",
+   "fieldtype": "Check",
+   "label": "Security Officer",
+   "default": "1",
+   "description": "Who was on the gate. Turning this off hides the field but not the DOC-SECURITY-OFFICER rule below — set that rule to Ignore as well."
   },
   {
    "fieldname": "enable_qr_code",
@@ -734,7 +750,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-10-29 14:00:00.000000",
+ "modified": "2026-10-30 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Gate Pass Management",
  "name": "Gate Pass Settings",
