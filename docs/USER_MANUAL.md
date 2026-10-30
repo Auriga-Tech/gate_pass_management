@@ -250,6 +250,7 @@ The receipt is created with:
 
 - **Accepted quantity** from the gate — what actually arrived, not what was ordered
 - **Damaged quantity** as rejected qty, in the rejected warehouse
+- **Shortage**, only if your site chose to — see *Shortage and the receipt* below
 - Taxes, currency and terms from the original order, because the app uses ERPNext's own mapper
 - The **Cost Center**, if one was chosen on the gate pass. Left blank, the receipt keeps the order's own cost center; chosen, it replaces it on every line
 - A link back to the gate pass
@@ -265,6 +266,24 @@ Some flows are configured the other way round: create the Purchase Receipt first
 One gate pass can produce several receipts over time — receive part today, the rest tomorrow. Each receipt draws down what is left, and the gate pass shows **% Processed**.
 
 You cannot receive more than the gate pass accepted. If you try, you will be told which line is over and by how much.
+
+### Shortage and the receipt
+
+If 100 were ordered and 94 arrived, 6 are **short**. What the receipt does with
+them is a choice your site makes once, in **Gate Pass Settings → Shortage on the
+Receipt**:
+
+| Choice | The receipt | The order | Stock |
+|---|---|---|---|
+| **Not Received** *(default)* | Books the 94 that arrived | Stays open for the missing 6 | Matches the shelf |
+| **Book as Rejected** | Books 94 accepted and 6 rejected | Closes as fully received | Shows 6 in the rejected warehouse that were never there |
+
+Neither is wrong. *Not Received* keeps the stock honest and keeps the shortfall
+visible on the order until it is chased. *Book as Rejected* suits a site that
+wants every unit on the order accounted for on the receipt itself.
+
+Damaged goods are booked as rejected under both choices, and either way you need
+a **Rejected Warehouse**, on the gate pass row or as the default in Settings.
 
 ## When quantities disagree
 
