@@ -29,6 +29,7 @@
   "cb_party",
   "allow_gate_pass_without_items",
   "allow_non_stock_items",
+  "hide_fully_passed_documents",
   "group_by_fields",
   "sb_required",
   "require_location",
@@ -71,6 +72,7 @@
   "post_submit_discrepancy_roles",
   "cb_discrepancy",
   "default_rejected_warehouse",
+  "shortage_handling",
   "sb_compliance",
   "block_on_provider_failure",
   "cb_compliance",
@@ -253,6 +255,13 @@
    "label": "Allow Free-Text Items",
    "default": "1",
    "description": "Lets the gate record tools, documents, scrap and samples that have no Item master."
+  },
+  {
+   "default": "1",
+   "description": "Leave documents out of the Get Items From list once every line on them has already been gate passed. Switch off to list them anyway; picking one then explains which gate pass used it up.",
+   "fieldname": "hide_fully_passed_documents",
+   "fieldtype": "Check",
+   "label": "Hide Fully Gate-Passed Documents in the Picker"
   },
   {
    "fieldname": "group_by_fields",
@@ -491,6 +500,14 @@
    "fieldtype": "Link",
    "label": "Default Rejected Warehouse",
    "options": "Warehouse"
+  },
+  {
+   "default": "Not Received",
+   "description": "What the receipt does with goods the gate counted as SHORT (ordered, but never arrived). Not Received: the receipt books only what arrived and the order line stays open for the shortfall, so stock matches the shelf. Book as Rejected: the shortfall is also booked as rejected quantity into the Rejected Warehouse, which closes the order line but records stock that was never physically there. Damaged goods are always booked as rejected either way.",
+   "fieldname": "shortage_handling",
+   "fieldtype": "Select",
+   "label": "Shortage on the Receipt",
+   "options": "Not Received\nBook as Rejected"
   },
   {
    "fieldname": "sb_compliance",
@@ -750,7 +767,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-10-30 12:00:00.000000",
+ "modified": "2026-10-30 21:30:00.000000",
  "modified_by": "Administrator",
  "module": "Gate Pass Management",
  "name": "Gate Pass Settings",

@@ -51,27 +51,34 @@ EINVOICE_DOCTYPES = {"Sales Invoice": "irn"}
 class IndiaComplianceProvider(ComplianceProvider):
 	name = "India (GST)"
 
-	checks = (
-		ComplianceCheck(
-			code=CHECK_E_INVOICE,
-			label=_("E-Invoice (IRN)"),
-			description=_(
-				"Electronic invoice registered with the IRP. Required for Sales Invoices "
-				"once e-invoicing applies to the company."
+	@property
+	def checks(self) -> tuple[ComplianceCheck, ...]:
+		"""Built on access, not at import: the labels are translated for the site at hand.
+
+		A class attribute would be translated once, in whichever language the first
+		request happened to use, and then shared by every site served by the process.
+		"""
+		return (
+			ComplianceCheck(
+				code=CHECK_E_INVOICE,
+				label=_("E-Invoice (IRN)"),
+				description=_(
+					"Electronic invoice registered with the IRP. Required for Sales Invoices "
+					"once e-invoicing applies to the company."
+				),
+				applies_to_doctypes=tuple(EINVOICE_DOCTYPES),
+				supports_threshold=False,
 			),
-			applies_to_doctypes=tuple(EINVOICE_DOCTYPES),
-			supports_threshold=False,
-		),
-		ComplianceCheck(
-			code=CHECK_E_WAY_BILL,
-			label=_("E-Way Bill"),
-			description=_(
-				"Electronic waybill required to transport goods above the state threshold."
+			ComplianceCheck(
+				code=CHECK_E_WAY_BILL,
+				label=_("E-Way Bill"),
+				description=_(
+					"Electronic waybill required to transport goods above the state threshold."
+				),
+				applies_to_doctypes=tuple(EWAYBILL_DOCTYPES),
+				supports_threshold=True,
 			),
-			applies_to_doctypes=tuple(EWAYBILL_DOCTYPES),
-			supports_threshold=True,
-		),
-	)
+		)
 
 	# -- availability ------------------------------------------------------
 

@@ -18,7 +18,7 @@ retire the old one via a patch instead.
 
 from dataclasses import dataclass, field
 
-from frappe import _
+from frappe import _lt
 
 # --- Actions ---------------------------------------------------------------
 
@@ -133,15 +133,15 @@ _DOCUMENT_RULES = [
 	   "The supplier invoice or challan date cannot be later than today.", BLOCK),
 	_r("DOC-BACKDATE", "Posting date within the backdate window", CAT_DOCUMENT,
 	   "Limits how far back a gate pass may be dated.", WARN,
-	   has_threshold=True, threshold_label=_("Days"), default_threshold=7),
+	   has_threshold=True, threshold_label=_lt("Days"), default_threshold=7),
 	_r("DOC-FUTUREDATE", "Posting date not in the future", CAT_DOCUMENT,
-	   "", BLOCK, has_threshold=True, threshold_label=_("Days"), default_threshold=0),
+	   "", BLOCK, has_threshold=True, threshold_label=_lt("Days"), default_threshold=0),
 	_r("DOC-RETURN-DATE", "Expected return on or after the gate pass date", CAT_DOCUMENT,
 	   "", BLOCK),
 	_r("DOC-RETURN-WINDOW", "Expected return within the permitted window", CAT_DOCUMENT,
 	   "Flags returnable passes promising an unusually distant return.", WARN,
 	   source_overridable=True, has_threshold=True,
-	   threshold_label=_("Days"), default_threshold=90),
+	   threshold_label=_lt("Days"), default_threshold=90),
 	_r("DOC-ITEMS-REQUIRED", "At least one item row", CAT_DOCUMENT,
 	   "Does not apply to Visitor or Vehicle Only passes.", BLOCK, source_overridable=True),
 	_r("DOC-TRACKING-UNIQUE", "Tracking ID not already used", CAT_DOCUMENT,
@@ -177,22 +177,22 @@ _QUANTITY_RULES = [
 	   "Defaults to Warn: the truck is already at the gate, so record the discrepancy "
 	   "rather than refusing to document what arrived.",
 	   WARN, source_overridable=True, has_threshold=True,
-	   threshold_label=_("Tolerance %"), default_threshold=0),
+	   threshold_label=_lt("Tolerance %"), default_threshold=0),
 	_r("QTY-LEDGER", "Total gate-passed quantity within the ordered quantity", CAT_QUANTITY,
 	   "Sums every submitted gate pass against the same source line. Evaluated under a "
 	   "row lock so two operators cannot both pass.",
 	   WARN, source_overridable=True, has_threshold=True,
-	   threshold_label=_("Tolerance %"), default_threshold=0),
+	   threshold_label=_lt("Tolerance %"), default_threshold=0),
 	_r("QTY-DUPLICATE-ROW", "Two rows referencing the same source line", CAT_QUANTITY, "",
 	   WARN, source_overridable=True),
 	_r("QTY-POLICY-TOLERANCE", "Quantity within tolerance of the source", CAT_QUANTITY,
 	   "Applies when Qty Policy is 'Editable within Tolerance'.",
 	   WARN, source_overridable=True, has_threshold=True,
-	   threshold_label=_("Variance %"), default_threshold=5),
+	   threshold_label=_lt("Variance %"), default_threshold=5),
 	_r("QTY-WEIGHT", "Net weight is positive", CAT_QUANTITY, "", WARN),
 	_r("QTY-WEIGHT-VARIANCE", "Net weight within the expected variance", CAT_QUANTITY, "",
 	   IGNORE, source_overridable=True, has_threshold=True,
-	   threshold_label=_("Variance %"), default_threshold=10),
+	   threshold_label=_lt("Variance %"), default_threshold=10),
 ]
 
 _DISCREPANCY_RULES = [
@@ -206,7 +206,7 @@ _DISCREPANCY_RULES = [
 	_r("DISC-THRESHOLD", "Discrepancy within the acceptable proportion of the consignment",
 	   CAT_DISCREPANCY, "Escalates unusually large shortages or damage.",
 	   WARN, source_overridable=True, has_threshold=True,
-	   threshold_label=_("% of total qty"), default_threshold=10),
+	   threshold_label=_lt("% of total qty"), default_threshold=10),
 ]
 
 _COMPLIANCE_RULES = [
@@ -243,7 +243,7 @@ _LIFECYCLE_RULES = [
 	   "Users holding a role in 'Attachment Unlock Roles' may still remove one; "
 	   "every removal is audited.", BLOCK),
 	_r("LIFE-STALE-DRAFT", "Draft gate passes are not left unsubmitted", CAT_LIFECYCLE, "",
-	   IGNORE, has_threshold=True, threshold_label=_("Days"), default_threshold=3),
+	   IGNORE, has_threshold=True, threshold_label=_lt("Days"), default_threshold=3),
 ]
 
 _DOWNSTREAM_RULES = [
@@ -260,10 +260,10 @@ _DOWNSTREAM_RULES = [
 	   "Defaults to Block. Goods may pass the gate with a discrepancy recorded, but a "
 	   "wrong quantity must not reach the stock ledger.",
 	   BLOCK, source_overridable=True, has_threshold=True,
-	   threshold_label=_("Tolerance %"), default_threshold=0),
+	   threshold_label=_lt("Tolerance %"), default_threshold=0),
 	_r("TGT-QTY-TOTAL", "Target quantity within the gate pass total", CAT_DOWNSTREAM,
 	   "A cheap backstop for TGT-QTY-ROW.", BLOCK, source_overridable=True,
-	   has_threshold=True, threshold_label=_("Tolerance %"), default_threshold=0),
+	   has_threshold=True, threshold_label=_lt("Tolerance %"), default_threshold=0),
 	_r("TGT-BLOCK-NATIVE", "Target may only be created from a gate pass", CAT_DOWNSTREAM,
 	   "Enforced server-side, so API and bulk imports cannot bypass it.",
 	   IGNORE, source_overridable=True),

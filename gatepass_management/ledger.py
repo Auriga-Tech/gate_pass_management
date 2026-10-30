@@ -192,23 +192,60 @@ def pending_qty(source_doctype: str, source_name: str, source_config) -> dict[st
 		already = flt(consumed.get(row.name, 0))
 		received = flt(row.get(consumed_field)) if consumed_field else 0.0
 
-		if formula == "qty - max(received, consumed)":
-			pending = qty - max(received, already)
-		elif formula == "abs(qty) - consumed":
-			pending = abs(qty) - already
-		elif formula == "qty":
-			pending = qty
-		else:
-			pending = qty - already
-
 		result[row.name] = {
 			"source_qty": qty,
 			"consumed": already,
 			"already_received": received,
-			"pending": max(0.0, flt(pending, 6)),
+			"pending": _pending(formula, qty, already, received),
 		}
 
 	return result
+
+
+def _pending(formula: str, qty: float, consumed: float, received: float) -> float:
+	if formula == "qty - max(received, consumed)":
+		pending = qty - max(received, consumed)
+	elif formula == "abs(qty) - consumed":
+		pending = abs(qty) - consumed
+	elif formula == "qty":
+		pending = qty
+	else:
+		pending = qty - consumed
+	return max(0.0, flt(pending, 6))
+
+
+def documents_with_pending(source_doctype: str, names: list[str], source_config) -> set[str]:
+	"""Which of these source documents still have something left to gate pass.
+
+	The picker asks this for a whole page at once, so it is two queries for the
+	lot rather than two per document.
+	"""
+	if not names:
+		return set()
+
+	qty_field = source_config.qty_field
+	consumed_field = source_config.consumed_field
+	formula = source_config.pending_formula or "qty - consumed"
+
+	fields = ["name", "parent", qty_field]
+	if consumed_field:
+		fields.append(consumed_field)
+	rows = frappe.get_all(
+		_child_doctype(source_doctype, source_config.child_table),
+		filters={"parent": ["in", names], "parenttype": source_doctype},
+		fields=fields,
+	)
+	consumed = consumed_qty([r.name for r in rows]) if rows else {}
+
+	open_documents = set()
+	for row in rows:
+		received = flt(row.get(consumed_field)) if consumed_field else 0.0
+		pending = _pending(
+			formula, flt(row.get(qty_field)), flt(consumed.get(row.name, 0)), received
+		)
+		if pending > 0:
+			open_documents.add(row.parent)
+	return open_documents
 
 
 def _child_doctype(parent_doctype: str, fieldname: str) -> str:

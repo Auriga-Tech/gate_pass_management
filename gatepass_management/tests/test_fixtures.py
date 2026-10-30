@@ -91,3 +91,39 @@ class TestRewordingALabelIsFree(FrappeTestCase):
 		before = frappe.db.count("Gate Pass Source")
 		fixtures.seed_sources()
 		self.assertEqual(frappe.db.count("Gate Pass Source"), before)
+
+
+class TestShippedPurposes(FrappeTestCase):
+	"""The Purpose field is a link, so with no records behind it the dropdown is empty."""
+
+	def test_names_are_unique_and_url_safe(self):
+		names = [p[0] for p in fixtures.STANDARD_PURPOSES]
+		self.assertEqual(len(names), len(set(names)), "duplicate purpose names")
+		bad = [n for n in names if "/" in n or any(d in n for d in DASHES)]
+		self.assertEqual(bad, [], "a slash breaks form URLs; dashes are banned by our standard")
+
+	def test_values_are_valid_for_the_doctype(self):
+		meta = frappe.get_meta("Gate Pass Purpose")
+		directions = meta.get_field("applies_to_direction").options.split("\n")
+		types = meta.get_field("default_gate_pass_type").options.split("\n")
+		for name, direction, pass_type, _note in fixtures.STANDARD_PURPOSES:
+			self.assertIn(direction, directions, name)
+			self.assertIn(pass_type, types, name)
+
+	def test_seeding_creates_every_purpose_and_is_repeatable(self):
+		frappe.db.delete("Gate Pass Purpose")
+		fixtures.seed_purposes()
+		fixtures.seed_purposes()
+		self.assertEqual(
+			frappe.db.count("Gate Pass Purpose"), len(fixtures.STANDARD_PURPOSES)
+		)
+
+	def test_migrate_fills_purposes_on_a_site_that_has_reasons_but_no_purposes(self):
+		"""erp16 and any earlier install: reasons exist, purposes do not."""
+		from gatepass_management.setup import install
+
+		frappe.db.delete("Gate Pass Purpose")
+		install.after_migrate()
+		self.assertEqual(
+			frappe.db.count("Gate Pass Purpose"), len(fixtures.STANDARD_PURPOSES)
+		)

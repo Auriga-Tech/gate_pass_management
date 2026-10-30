@@ -224,25 +224,147 @@ def source_query(doctype, txt, searchfield, start, page_len, filters):
 		if party_field:
 			or_filters[party_field] = ["like", f"%{txt}%"]
 
-	# Rows the permission map rejects are dropped after the fetch, so an
-	# unrestricted user pays nothing and a restricted one still fills a page.
-	fetch = page_len if not permission_map else min(page_len * 3, 200)
+	# Whatever is dropped after the fetch (rows the permission map rejects,
+	# documents with nothing left to pass) is dropped before the page is cut, and
+	# `start` counts documents shown, not documents scanned. An unrestricted user
+	# with the setting off pays for one fetch and nothing else.
+	hide_passed = bool(frappe.db.get_single_value("Gate Pass Settings", "hide_fully_passed_documents"))
+	chunk = page_len if not (permission_map or hide_passed) else min(page_len * 3, 200)
 
-	rows = frappe.get_all(
-		doctype,
-		filters=conditions,
-		or_filters=or_filters or None,
-		fields=fields,
-		order_by=f"{date_field} desc" if date_field else "modified desc",
+	shown, skipped, scanned = [], 0, 0
+	for _attempt in range(20):  # a hard stop, so a huge backlog of passed orders cannot run away
+		batch = frappe.get_all(
+			doctype,
+			filters=conditions,
+			or_filters=or_filters or None,
+			fields=fields,
+			order_by=f"{date_field} desc" if date_field else "modified desc",
+			limit_start=scanned,
+			limit_page_length=chunk,
+			ignore_permissions=True,
+		)
+		if not batch:
+			break
+		scanned += len(batch)
+
+		if permission_map:
+			batch = [r for r in batch if _row_permitted(r, permission_map, strict)]
+		if hide_passed:
+			open_documents = ledger.documents_with_pending(
+				doctype, [r.name for r in batch], config
+			)
+			batch = [r for r in batch if r.name in open_documents]
+
+		for row in batch:
+			if skipped < int(start or 0):
+				skipped += 1
+			elif len(shown) < page_len:
+				shown.append(row)
+		if len(shown) >= page_len:
+			break
+
+	rows = shown
+
+	return rows
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def party_type_query(doctype, txt, searchfield, start, page_len, filters):
+	"""The Party Type dropdown: only what Gate Pass Settings allows.
+
+	A custom query rather than a filter on the DocType link, because a gate
+	operator cannot necessarily read DocType and the list lives in Settings,
+	which they cannot read either. With nothing listed it restricts nothing.
+	"""
+	from gatepass_management.gate_pass_management.doctype.gate_pass.gate_pass import (
+		allowed_party_types,
+	)
+
+	start, page_len, txt = int(start or 0), int(page_len or 20), (txt or "").lower()
+	allowed = allowed_party_types()
+	if allowed:
+		return [[p] for p in allowed if txt in p.lower()][start : start + page_len]
+
+	return frappe.get_all(
+		"DocType",
+		filters={"name": ["like", f"%{txt}%"], "istable": 0},
+		fields=["name"],
+		order_by="name asc",
 		limit_start=start,
-		limit_page_length=fetch,
+		limit_page_length=page_len,
+		as_list=True,
 		ignore_permissions=True,
 	)
 
-	if permission_map:
-		rows = [r for r in rows if _row_permitted(r, permission_map, strict)][:page_len]
 
-	return rows
+def _party_link_query(doctype, txt, start, page_len, filters, label_fields):
+	"""Addresses or contacts linked to the chosen party, and no others.
+
+	A gate operator holds no Address or Contact permission, so the ordinary link
+	search would come back empty. This offers only what is linked to the party
+	already on the pass, and nothing until a party is chosen.
+	"""
+	if not frappe.has_permission("Gate Pass", "create"):
+		frappe.throw(_("You do not have permission to use this list."), frappe.PermissionError)
+
+	filters = filters or {}
+	link_doctype, link_name = filters.get("link_doctype"), filters.get("link_name")
+	if not (link_doctype and link_name):
+		return []
+
+	link = frappe.qb.DocType("Dynamic Link")
+	linked = (
+		frappe.qb.from_(link)
+		.select(link.parent)
+		.where(
+			(link.parenttype == doctype) & (link.link_doctype == link_doctype) & (link.link_name == link_name)
+		)
+		.run(pluck=True)
+	)
+	if not linked:
+		return []
+
+	txt = (txt or "").strip()
+	rows = frappe.get_all(
+		doctype,
+		filters={"name": ["in", linked]},
+		or_filters=[[doctype, f, "like", f"%{txt}%"] for f in ("name", *label_fields)] if txt else None,
+		fields=["name", *label_fields],
+		order_by="modified desc",
+		limit_start=int(start or 0),
+		limit_page_length=int(page_len or 20),
+	)
+	return [[r.name, ", ".join(str(r.get(f)) for f in label_fields if r.get(f))] for r in rows]
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def party_address_query(doctype, txt, searchfield, start, page_len, filters):
+	"""The Party Address dropdown."""
+	return _party_link_query("Address", txt, start, page_len, filters, ("address_title", "city"))
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def party_contact_query(doctype, txt, searchfield, start, page_len, filters):
+	"""The Party Contact dropdown."""
+	return _party_link_query("Contact", txt, start, page_len, filters, ("mobile_no", "email_id"))
+
+
+@frappe.whitelist()
+def get_series_for_direction(direction: str) -> str | None:
+	"""The series the form should show for this direction, or None.
+
+	A gate operator cannot read Gate Pass Settings, so the form asks here
+	rather than reading it. The server applies the same rule when the pass is
+	named, so this only keeps the screen honest.
+	"""
+	from gatepass_management.gate_pass_management.doctype.gate_pass.gate_pass import (
+		series_for_direction,
+	)
+
+	return series_for_direction(direction)
 
 
 @frappe.whitelist()
@@ -261,11 +383,44 @@ def build_gate_pass(source_type: str, source_name: str, target_doc=None, rows=No
 	implementations this app replaces are now twelve rows of configuration.
 	"""
 	config = frappe.get_cached_doc("Gate Pass Source", source_type)
-	_check_source_access(config.source_doctype, source_name)
+
+	names = _as_list(source_name)
+	if not names:
+		frappe.throw(_("Select at least one document."))
 
 	if isinstance(rows, str):
 		rows = json.loads(rows)
 	selected = set(rows or [])
+
+	gp = frappe.new_doc("Gate Pass") if not target_doc else frappe.get_doc(json.loads(target_doc))
+
+	# Built in memory and returned, so a refusal on the second document leaves
+	# the form exactly as the user had it.
+	for name in names:
+		_add_source(gp, config, name, selected)
+	return gp
+
+
+def _as_list(value) -> list[str]:
+	"""One document name, or a JSON list of them, as an ordered list without repeats."""
+	if isinstance(value, str):
+		value = value.strip()
+		value = json.loads(value) if value.startswith("[") else ([value] if value else [])
+	seen, out = set(), []
+	for v in value or []:
+		if v and v not in seen:
+			seen.add(v)
+			out.append(v)
+	return out
+
+
+def _add_source(gp, config, source_name: str, selected: set):
+	"""Append the pending rows of one source document to the gate pass.
+
+	A pass may span several documents of one flow, as long as they share a
+	party: one truck, one supplier, two purchase orders.
+	"""
+	_check_source_access(config.source_doctype, source_name)
 
 	source_doc = frappe.get_doc(config.source_doctype, source_name)
 	if source_doc.docstatus != 1:
@@ -277,19 +432,26 @@ def build_gate_pass(source_type: str, source_name: str, target_doc=None, rows=No
 	if not pending or not any(v["pending"] > 0 for v in pending.values()):
 		_throw_already_passed(config, source_name)
 
-	gp = frappe.new_doc("Gate Pass") if not target_doc else frappe.get_doc(json.loads(target_doc))
-
-	gp.company = source_doc.get("company")
-	gp.source_type = config.name
-	gp.source_doctype = config.source_doctype
-	gp.source_document = source_name
-	gp.source_sub_type = config.sub_type
-	gp.direction = config.direction
-	gp.source_document_date = source_doc.get("posting_date") or source_doc.get("transaction_date")
-
 	from gatepass_management.sources.automation import _resolve_party
 
 	party_type, party = _resolve_party(config, source_doc)
+	if gp.items and gp.party and party and (gp.party_type, gp.party) != (party_type or gp.party_type, party):
+		frappe.throw(
+			_("{0} {1} belongs to {2}, but this Gate Pass is for {3}. One Gate Pass covers one party.").format(
+				_(config.source_doctype), source_name, party, gp.party
+			),
+			title=_("Different party"),
+		)
+
+	first = not gp.items
+	gp.company = source_doc.get("company") or gp.company
+	gp.source_type = config.name
+	gp.source_doctype = config.source_doctype
+	gp.source_sub_type = config.sub_type
+	gp.direction = config.direction
+	if first or not gp.source_document:
+		gp.source_document = source_name
+		gp.source_document_date = source_doc.get("posting_date") or source_doc.get("transaction_date")
 	gp.party_type = party_type or gp.party_type
 	gp.party = party or gp.party
 
@@ -301,7 +463,8 @@ def build_gate_pass(source_type: str, source_name: str, target_doc=None, rows=No
 		order_by="idx asc",
 	)
 
-	added = 0
+	already_here = {r.source_row for r in gp.items if r.source_row}
+	added = skipped = 0
 	for row in child_rows:
 		if selected and row.name not in selected:
 			continue
@@ -311,6 +474,11 @@ def build_gate_pass(source_type: str, source_name: str, target_doc=None, rows=No
 
 		item_code = row.get(config.item_field)
 		if item_code and frappe.db.get_value("Item", item_code, "exclude_from_gate_pass"):
+			continue
+
+		# Picking the same document twice must not double its quantities.
+		if row.name in already_here:
+			skipped += 1
 			continue
 
 		qty = info["pending"]
@@ -337,10 +505,14 @@ def build_gate_pass(source_type: str, source_name: str, target_doc=None, rows=No
 		added += 1
 
 	if not added:
+		if skipped:
+			frappe.throw(
+				_("{0} {1} is already on this Gate Pass.").format(_(config.source_doctype), source_name),
+				title=_("Already added"),
+			)
 		_throw_already_passed(config, source_name)
 
 	_apply_header_map(config, source_doc, gp)
-	return gp
 
 
 def _apply_header_map(config, source_doc, gp):
@@ -552,6 +724,11 @@ def refresh_compliance(gate_pass: str) -> dict:
 
 
 # -------------------------------------------------------------- gate desk
+#
+# `scan` and `yard_status` are the server half of the mobile gate console, which
+# is scheduled for v1.1. Nothing in this app calls them yet, and that is
+# deliberate: they are permission-checked and ready, so the console is a UI job
+# rather than an API one. Do not remove them as dead code.
 
 
 @frappe.whitelist()

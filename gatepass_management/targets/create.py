@@ -204,24 +204,35 @@ def _apply_qty(item, gp_row):
 	"""Push the gate's physical count into the target.
 
 	`accepted_qty` — what actually came in — not `qty`, which is what the
-	paperwork claimed. Damage becomes rejected qty where the target supports it,
-	so the receipt reflects reality without a second data-entry step.
+	paperwork claimed. Damage and goods rejected at the gate become rejected qty
+	where the target supports it, so the receipt reflects reality without a
+	second data-entry step. Both were physically brought in, so both are held in
+	the rejected warehouse.
 
-	Shortage is deliberately NOT carried over. Rejected qty still writes a Stock
-	Ledger Entry into the rejected warehouse, so booking short-delivered goods
-	there would create stock that does not exist and close the order line as
+	Shortage is the one thing a site chooses (Gate Pass Settings > Shortage on
+	the Receipt). By default it is NOT carried over: rejected qty still writes a
+	Stock Ledger Entry into the rejected warehouse, so booking short-delivered
+	goods there creates stock that does not exist and closes the order line as
 	fully received, which is the opposite of what recording a shortage is for.
-	Short goods are simply not received, and the order line stays open.
+	Short goods are simply not received and the order line stays open.
+
+	"Book as Rejected" exists because some sites reconcile the other way: they
+	want the receipt to account for every unit on the order and the shortfall
+	visible as rejected stock. That is their accounting decision to make, so it
+	is a setting rather than a rule, and the field's description says what it
+	costs.
 	"""
 	accepted = flt(gp_row.accepted_qty)
 	damaged = flt(gp_row.damaged_qty)
+	shortage = flt(gp_row.shortage_qty) if _books_shortage() else 0
+	rejected = damaged + flt(gp_row.rejected_qty) + shortage
 	item.qty = accepted
 
 	if item.meta.has_field("received_qty"):
-		item.received_qty = accepted + damaged
+		item.received_qty = accepted + rejected
 	if item.meta.has_field("rejected_qty"):
-		item.rejected_qty = damaged
-		if damaged and item.meta.has_field("rejected_warehouse"):
+		item.rejected_qty = rejected
+		if rejected and item.meta.has_field("rejected_warehouse"):
 			item.rejected_warehouse = gp_row.rejected_warehouse or frappe.db.get_single_value(
 				"Gate Pass Settings", "default_rejected_warehouse"
 			)
@@ -230,16 +241,22 @@ def _apply_qty(item, gp_row):
 				# validation, where nothing names the gate pass row at fault.
 				frappe.throw(
 					_(
-						"Row {0} ({1}) has {2} damaged, but no Rejected Warehouse to hold it. "
-						"Set one on the Gate Pass row, or a Default Rejected Warehouse in "
-						"Gate Pass Settings, then create the receipt again."
-					).format(gp_row.idx, gp_row.item_code, damaged),
+						"Row {0} ({1}) has {2} to book as rejected, but no Rejected Warehouse "
+						"to hold it. Set one on the Gate Pass row, or a Default Rejected "
+						"Warehouse in Gate Pass Settings, then create the receipt again."
+					).format(gp_row.idx, gp_row.item_code, rejected),
 					title=_("Rejected Warehouse missing"),
 				)
 	if item.meta.has_field("amount"):
 		item.amount = accepted * flt(item.get("rate"))
 	if gp_row.bom and item.meta.has_field("bom"):
 		item.bom = gp_row.bom
+
+
+def _books_shortage() -> bool:
+	return (
+		frappe.db.get_single_value("Gate Pass Settings", "shortage_handling") == "Book as Rejected"
+	)
 
 
 def _erpnext_mapper(gp, config, target_doctype, source_document):

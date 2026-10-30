@@ -8,14 +8,15 @@
  "field_order": [
   "sb_basic",
   "naming_series",
-  "company",
   "direction",
   "gate_pass_type",
   "cb_basic",
-  "posting_date",
-  "posting_time",
+  "company",
   "purpose",
   "status",
+  "cb_basic2",
+  "posting_date",
+  "posting_time",
   "sb_gate",
   "location",
   "gate",
@@ -23,9 +24,8 @@
   "cb_gate",
   "security_officer",
   "security_officer_name",
-  "sb_stamps",
+  "cb_gate2",
   "entry_datetime",
-  "cb_stamps",
   "exit_datetime",
   "turnaround_minutes",
   "timestamps_amended",
@@ -37,35 +37,39 @@
   "cb_party",
   "address",
   "address_display",
-  "address_text",
   "contact_person",
   "contact_mobile",
   "sb_source",
+  "reference_no",
+  "reference_date",
+  "cb_source",
   "source_type",
   "source_doctype",
   "source_document",
   "is_multi_source",
-  "cb_source",
+  "cb_source2",
   "source_sub_type",
   "source_document_date",
-  "reference_no",
-  "reference_date",
   "tracking_id",
+  "sb_source_docs",
+  "source_card",
   "sb_vehicle",
   "vehicle_number",
   "vehicle_type",
   "transporter",
-  "lr_number",
-  "lr_date",
   "cb_vehicle",
   "driver_name",
   "driver_contact",
   "driver_license",
+  "cb_vehicle2",
+  "lr_number",
+  "lr_date",
   "eway_bill_no",
   "sb_weight",
   "gross_weight",
-  "tare_weight",
   "cb_weight",
+  "tare_weight",
+  "cb_weight2",
   "net_weight",
   "weight_uom",
   "sb_items",
@@ -75,6 +79,7 @@
   "total_packages",
   "cb_totals",
   "total_accepted_qty",
+  "cb_totals2",
   "total_amount",
   "sb_compliance",
   "compliance_status",
@@ -91,19 +96,22 @@
   "cb_discrepancy",
   "discrepancy_notes",
   "discrepancy_photo",
+  "cb_discrepancy2",
   "discrepancy_reported_by",
   "discrepancy_reported_on",
   "sb_returnable",
   "is_returnable",
   "expected_return_date",
-  "actual_return_date",
   "cb_returnable",
-  "returned_qty",
+  "actual_return_date",
+  "cb_returnable2",
   "return_status",
+  "returned_qty",
   "sb_inspection",
   "packaging_condition",
-  "documentation_status",
   "cb_inspection",
+  "documentation_status",
+  "cb_inspection2",
   "inspection_remarks",
   "sb_docs",
   "documents",
@@ -117,11 +125,13 @@
   "charges",
   "total_charges",
   "sb_processing",
-  "references",
   "processed_qty",
   "cb_processing",
   "per_processed",
+  "cb_processing2",
   "enforcement_mode",
+  "sb_references",
+  "references",
   "sb_footer",
   "remarks",
   "amended_from"
@@ -139,14 +149,6 @@
    "default": "GP-.YYYY.-",
    "reqd": 1,
    "print_hide": 1
-  },
-  {
-   "fieldname": "company",
-   "fieldtype": "Link",
-   "label": "Company",
-   "options": "Company",
-   "reqd": 1,
-   "in_standard_filter": 1
   },
   {
    "fieldname": "direction",
@@ -173,19 +175,12 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "posting_date",
-   "fieldtype": "Date",
-   "label": "Date",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
    "reqd": 1,
-   "default": "Today",
-   "in_list_view": 1
-  },
-  {
-   "fieldname": "posting_time",
-   "fieldtype": "Time",
-   "label": "Time",
-   "reqd": 1,
-   "default": "Now"
+   "in_standard_filter": 1
   },
   {
    "fieldname": "purpose",
@@ -203,6 +198,25 @@
    "no_copy": 1,
    "default": "Draft",
    "options": "Draft\nAt Gate\nInside\nPartially Processed\nCompleted\nPending Return\nPartially Returned\nReturned\nOverdue Return\nClosed\nCancelled"
+  },
+  {
+   "fieldname": "cb_basic2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "reqd": 1,
+   "default": "Today",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "posting_time",
+   "fieldtype": "Time",
+   "label": "Time",
+   "reqd": 1,
+   "default": "Now"
   },
   {
    "fieldname": "sb_gate",
@@ -247,8 +261,8 @@
    "fetch_from": "security_officer.employee_name"
   },
   {
-   "fieldname": "sb_stamps",
-   "fieldtype": "Section Break"
+   "fieldname": "cb_gate2",
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "entry_datetime",
@@ -257,10 +271,6 @@
    "read_only": 1,
    "no_copy": 1,
    "allow_on_submit": 1
-  },
-  {
-   "fieldname": "cb_stamps",
-   "fieldtype": "Column Break"
   },
   {
    "fieldname": "exit_datetime",
@@ -325,35 +335,46 @@
   {
    "fieldname": "address",
    "fieldtype": "Link",
-   "label": "Address",
+   "label": "Party Address",
    "options": "Address"
   },
   {
    "fieldname": "address_display",
    "fieldtype": "Small Text",
-   "label": "Address",
+   "label": "Address Details",
    "read_only": 1
-  },
-  {
-   "fieldname": "address_text",
-   "fieldtype": "Data",
-   "label": "Address"
   },
   {
    "fieldname": "contact_person",
    "fieldtype": "Link",
-   "label": "Contact",
+   "label": "Party Contact",
    "options": "Contact"
   },
   {
    "fieldname": "contact_mobile",
    "fieldtype": "Data",
-   "label": "Mobile"
+   "label": "Contact Mobile"
   },
   {
    "fieldname": "sb_source",
    "fieldtype": "Section Break",
    "label": "Source Document"
+  },
+  {
+   "fieldname": "reference_no",
+   "fieldtype": "Data",
+   "label": "Invoice / Challan No",
+   "in_list_view": 1,
+   "description": "The supplier's document number, as printed on the paperwork."
+  },
+  {
+   "fieldname": "reference_date",
+   "fieldtype": "Date",
+   "label": "Invoice / Challan Date"
+  },
+  {
+   "fieldname": "cb_source",
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "source_type",
@@ -384,7 +405,7 @@
    "read_only": 1
   },
   {
-   "fieldname": "cb_source",
+   "fieldname": "cb_source2",
    "fieldtype": "Column Break"
   },
   {
@@ -400,23 +421,21 @@
    "read_only": 1
   },
   {
-   "fieldname": "reference_no",
-   "fieldtype": "Data",
-   "label": "Invoice / Challan No",
-   "in_list_view": 1,
-   "description": "The supplier's document number, as printed on the paperwork."
-  },
-  {
-   "fieldname": "reference_date",
-   "fieldtype": "Date",
-   "label": "Invoice / Challan Date"
-  },
-  {
    "fieldname": "tracking_id",
    "fieldtype": "Data",
    "label": "Tracking ID",
    "read_only": 1,
    "no_copy": 1
+  },
+  {
+   "fieldname": "sb_source_docs",
+   "fieldtype": "Section Break",
+   "label": "Documents on this Gate Pass"
+  },
+  {
+   "fieldname": "source_card",
+   "fieldtype": "HTML",
+   "label": "Documents"
   },
   {
    "fieldname": "sb_vehicle",
@@ -443,16 +462,6 @@
    "options": "Supplier"
   },
   {
-   "fieldname": "lr_number",
-   "fieldtype": "Data",
-   "label": "LR / Consignment No"
-  },
-  {
-   "fieldname": "lr_date",
-   "fieldtype": "Date",
-   "label": "LR Date"
-  },
-  {
    "fieldname": "cb_vehicle",
    "fieldtype": "Column Break"
   },
@@ -472,6 +481,20 @@
    "label": "Driver Licence No"
   },
   {
+   "fieldname": "cb_vehicle2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "lr_number",
+   "fieldtype": "Data",
+   "label": "LR / Consignment No"
+  },
+  {
+   "fieldname": "lr_date",
+   "fieldtype": "Date",
+   "label": "LR Date"
+  },
+  {
    "fieldname": "eway_bill_no",
    "fieldtype": "Data",
    "label": "E-Way Bill No"
@@ -488,12 +511,16 @@
    "label": "Gross Weight"
   },
   {
+   "fieldname": "cb_weight",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "tare_weight",
    "fieldtype": "Float",
    "label": "Tare Weight"
   },
   {
-   "fieldname": "cb_weight",
+   "fieldname": "cb_weight2",
    "fieldtype": "Column Break"
   },
   {
@@ -544,6 +571,10 @@
    "fieldtype": "Float",
    "label": "Total Accepted",
    "read_only": 1
+  },
+  {
+   "fieldname": "cb_totals2",
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "total_amount",
@@ -652,6 +683,10 @@
    "allow_on_submit": 1
   },
   {
+   "fieldname": "cb_discrepancy2",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "discrepancy_reported_by",
    "fieldtype": "Link",
    "label": "Reported By",
@@ -685,6 +720,10 @@
    "depends_on": "is_returnable"
   },
   {
+   "fieldname": "cb_returnable",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "actual_return_date",
    "fieldtype": "Date",
    "label": "Actual Return",
@@ -692,15 +731,8 @@
    "allow_on_submit": 1
   },
   {
-   "fieldname": "cb_returnable",
+   "fieldname": "cb_returnable2",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "returned_qty",
-   "fieldtype": "Float",
-   "label": "Returned Qty",
-   "read_only": 1,
-   "allow_on_submit": 1
   },
   {
    "fieldname": "return_status",
@@ -710,6 +742,13 @@
    "allow_on_submit": 1,
    "options": "Not Applicable\nPending\nPartially Returned\nReturned\nOverdue",
    "default": "Not Applicable"
+  },
+  {
+   "fieldname": "returned_qty",
+   "fieldtype": "Float",
+   "label": "Returned Qty",
+   "read_only": 1,
+   "allow_on_submit": 1
   },
   {
    "fieldname": "sb_inspection",
@@ -723,13 +762,17 @@
    "options": "\nGood\nDamaged\nPartially Damaged"
   },
   {
+   "fieldname": "cb_inspection",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "documentation_status",
    "fieldtype": "Select",
    "label": "Documentation",
    "options": "\nComplete\nIncomplete"
   },
   {
-   "fieldname": "cb_inspection",
+   "fieldname": "cb_inspection2",
    "fieldtype": "Column Break"
   },
   {
@@ -799,13 +842,6 @@
    "collapsible": 1
   },
   {
-   "fieldname": "references",
-   "fieldtype": "Table",
-   "label": "Documents Created",
-   "options": "Gate Pass Reference",
-   "read_only": 1
-  },
-  {
    "fieldname": "processed_qty",
    "fieldtype": "Float",
    "label": "Processed Qty",
@@ -824,6 +860,10 @@
    "allow_on_submit": 1
   },
   {
+   "fieldname": "cb_processing2",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "enforcement_mode",
    "fieldtype": "Data",
    "label": "Enforcement at Submit",
@@ -832,12 +872,25 @@
    "description": "The preset in force when this gate pass was submitted, so historical documents are judged by the rules that were live at the time."
   },
   {
+   "fieldname": "sb_references",
+   "fieldtype": "Section Break",
+   "label": "References",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "references",
+   "fieldtype": "Table",
+   "label": "Documents Created",
+   "options": "Gate Pass Reference",
+   "read_only": 1
+  },
+  {
    "fieldname": "sb_footer",
    "fieldtype": "Section Break"
   },
   {
    "fieldname": "remarks",
-   "fieldtype": "Text",
+   "fieldtype": "Small Text",
    "label": "Remarks"
   },
   {
@@ -858,7 +911,7 @@
    "group": "Audit"
   }
  ],
- "modified": "2026-08-05 10:00:00.000000",
+ "modified": "2026-10-30 23:00:00.000000",
  "modified_by": "Administrator",
  "module": "Gate Pass Management",
  "name": "Gate Pass",

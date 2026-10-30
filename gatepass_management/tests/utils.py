@@ -20,6 +20,7 @@ PREFIX = "_GPTEST"
 ITEM = f"{PREFIX} Widget"
 ITEM_B = f"{PREFIX} Bolt"
 SUPPLIER = f"{PREFIX} Supplier"
+SUPPLIER_B = f"{PREFIX} Other Supplier"
 CUSTOMER = f"{PREFIX} Customer"
 
 
@@ -56,14 +57,15 @@ def ensure_masters() -> dict:
 				}
 			).insert(ignore_permissions=True)
 
-	if not frappe.db.exists("Supplier", SUPPLIER):
-		frappe.get_doc(
-			{
-				"doctype": "Supplier",
-				"supplier_name": SUPPLIER,
-				"supplier_group": frappe.db.get_value("Supplier Group", {}, "name"),
-			}
-		).insert(ignore_permissions=True)
+	for supplier in (SUPPLIER, SUPPLIER_B):
+		if not frappe.db.exists("Supplier", supplier):
+			frappe.get_doc(
+				{
+					"doctype": "Supplier",
+					"supplier_name": supplier,
+					"supplier_group": frappe.db.get_value("Supplier Group", {}, "name"),
+				}
+			).insert(ignore_permissions=True)
 
 	return {"company": company, "abbr": abbr, "stores": stores, "rejected": rejected}
 
@@ -127,13 +129,14 @@ def _any_item_group() -> str:
 # ------------------------------------------------------------ transactions
 
 
-def make_purchase_order(masters: dict, lines: list[tuple[str, float]], submit: bool = True):
+def make_purchase_order(masters: dict, lines: list[tuple[str, float]], submit: bool = True,
+                        supplier: str = SUPPLIER):
 	"""A submitted Purchase Order, as the usual source document."""
 	po = frappe.get_doc(
 		{
 			"doctype": "Purchase Order",
 			"company": masters["company"],
-			"supplier": SUPPLIER,
+			"supplier": supplier,
 			"transaction_date": today(),
 			"schedule_date": today(),
 			"items": [
@@ -336,3 +339,57 @@ def violations_for(doc, at_submit: bool = False) -> dict[str, list]:
 		"warn": [v.code for v in ctx.warnings],
 		"messages": {v.code: v.message for v in ctx.violations + ctx.warnings},
 	}
+
+
+@contextlib.contextmanager
+def allowed_party_types(*types, default=None):
+	"""Gate Pass Settings > Allowed Party Types, saved the way the form saves it,
+	and put back afterwards. The default is moved too: a default the list then
+	excludes is refused on save."""
+	settings = frappe.get_single("Gate Pass Settings")
+	before = ([r.party_type for r in settings.allowed_party_types], settings.default_party_type)
+
+	def apply(listed, default_type):
+		settings = frappe.get_single("Gate Pass Settings")
+		settings.set("allowed_party_types", [{"party_type": t} for t in listed])
+		settings.default_party_type = default_type
+		settings.save(ignore_permissions=True)
+		frappe.clear_cache()
+
+	apply(types, default if default is not None else (types[0] if types else None))
+	try:
+		yield
+	finally:
+		apply(*before)
+
+
+def make_party_address(party: str, title: str, party_type: str = "Supplier"):
+	"""An Address linked to a party, which is what the Party Address list offers."""
+	doc = frappe.get_doc(
+		{
+			"doctype": "Address",
+			"address_title": title,
+			"address_type": "Billing",
+			"address_line1": "1 Test Road",
+			"city": "Jaipur",
+			"country": frappe.db.get_value("Country", {}, "name"),
+			"links": [{"link_doctype": party_type, "link_name": party}],
+		}
+	)
+	doc.insert(ignore_permissions=True)
+	return doc
+
+
+def make_party_contact(party: str, first_name: str, mobile: str | None = None, party_type: str = "Supplier"):
+	"""A Contact linked to a party."""
+	doc = frappe.get_doc(
+		{
+			"doctype": "Contact",
+			"first_name": first_name,
+			# mobile_no is derived from this table on save; setting it directly is wiped
+			"phone_nos": [{"phone": mobile, "is_primary_mobile_no": 1}] if mobile else [],
+			"links": [{"link_doctype": party_type, "link_name": party}],
+		}
+	)
+	doc.insert(ignore_permissions=True)
+	return doc

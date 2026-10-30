@@ -25,7 +25,7 @@ def after_install():
 	reconcile_rules()
 	fixtures.seed_sources()
 	fixtures.seed_masters()
-	frappe.db.commit()
+	# No commit here: `bench install-app` commits when the install finishes.
 	get_logger().info("app_installed", extra={"version": "1.0.0-dev"})
 
 
@@ -40,6 +40,9 @@ def after_migrate():
 	# it back on every migrate.
 	if not frappe.db.count("Gate Pass Discrepancy Reason"):
 		fixtures.seed_masters()
+	elif not frappe.db.count("Gate Pass Purpose"):
+		# A site that already has its reasons but predates the purposes.
+		fixtures.seed_purposes()
 
 
 def before_uninstall():
@@ -53,16 +56,18 @@ def before_uninstall():
 
 # ---------------------------------------------------------------- roles
 
-ROLES = [
-	("Gate Pass Operator", _("Security staff at the gate. Creates and submits gate passes.")),
-	("Gate Pass User", _("Stores and purchase staff. Creates gate passes and target documents.")),
-	("Gate Pass Manager", _("Cancels, amends, and may override rules where configured.")),
-	("Gate Pass Auditor", _("Read-only access, including the full event log.")),
-]
+def _roles() -> list[tuple[str, str]]:
+	"""Called when needed, not at import: the description is translated for the site at hand."""
+	return [
+		("Gate Pass Operator", _("Security staff at the gate. Creates and submits gate passes.")),
+		("Gate Pass User", _("Stores and purchase staff. Creates gate passes and target documents.")),
+		("Gate Pass Manager", _("Cancels, amends, and may override rules where configured.")),
+		("Gate Pass Auditor", _("Read-only access, including the full event log.")),
+	]
 
 
 def create_roles():
-	for name, description in ROLES:
+	for name, description in _roles():
 		if frappe.db.exists("Role", name):
 			continue
 		frappe.get_doc(
@@ -95,14 +100,17 @@ def delete_custom_fields():
 # ------------------------------------------------------------- settings
 
 
-# Features switches added after 1.0.0. A Single that was saved before the field
-# existed has no value for it, which reads as off — and an off Features switch
-# hides its field, so the operator would be left with no way to bring it back.
-# Only a field that has never been stored is seeded; a deliberate 0 is a
-# customer decision and stays.
+# Settings added after 1.0.0. A Single that was saved before the field existed
+# has no value for it, because Frappe does not write a default into a Single on
+# migrate. For a Features switch that reads as off — and an off switch hides its
+# field, so the operator would be left with no way to bring it back. For a Select
+# it reads as blank. Only a field that has never been stored is seeded; a
+# deliberate 0, or a choice the customer made, is theirs and stays.
 NEW_FEATURE_DEFAULTS = {
 	"enable_security_officer": 1,
 	"enable_eway_bill": 1,
+	"shortage_handling": "Not Received",
+	"hide_fully_passed_documents": 1,
 }
 
 

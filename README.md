@@ -51,7 +51,7 @@ It records a physical movement across a boundary and reconciles it against the c
 
 **Statutory compliance at the gate.** The gate is the last point where a non-compliant dispatch is still preventable. Ships with an India provider that blocks dispatch until the E-Invoice (IRN) and E-Way Bill exist, reading thresholds from GST Settings rather than hard-coding them. The framework is jurisdiction-neutral; other countries plug in through a hook.
 
-**Discrepancy where it is discovered.** Shortage, damage and rejection are captured at the gate, by reason and by liable party. Accepted quantity — not the paperwork quantity — is what flows into the receipt, and damage maps to rejected quantity automatically.
+**Discrepancy where it is discovered.** Shortage, damage and rejection are captured at the gate, by reason and by liable party. Accepted quantity — not the paperwork quantity — is what flows into the receipt. Damaged goods and goods rejected at the gate map to rejected quantity automatically; whether a shortage is booked as rejected too is a setting (**Shortage on the Receipt**), and by default short goods are simply not received, so the order line stays open.
 
 **Configurable rather than forkable.** 60 business rules, each set to **Block**, **Warn** or **Ignore** — globally, per flow, and per role. Twelve source flows ship as data you can duplicate and edit. No customer-specific logic is compiled into this app.
 
@@ -64,14 +64,14 @@ It records a physical movement across a boundary and reconciles it against the c
 ## Installation
 
 ```bash
-bench get-app https://github.com/aurigait/gatepass_management
+bench get-app https://github.com/Auriga-Tech/gate_pass_management --branch version-16
 ```
 
 ```bash
 bench --site your-site.local install-app gatepass_management
 ```
 
-Requires **Frappe v16** and **ERPNext v16**.
+Requires **Frappe v16** and **ERPNext v16**. `version-16` is the active branch.
 
 Installation seeds twelve working source flows, the rule catalogue, four roles and a set of discrepancy reasons. **A fresh install produces a usable gate pass with no configuration at all.**
 
@@ -96,7 +96,7 @@ Three layers, each owning a different kind of decision.
 
 **Gate Pass Settings** — global policy. Which fields are mandatory, which features are on, naming, dating limits, permissions, notifications, and the rule table where every rule's action is set.
 
-**Gate Pass Source** — one record per flow, e.g. "Purchase Order — Inward". Defines the child table, quantity fields, pending formula, allowed statuses, permitted roles, quantity-edit policy, required documents, compliance checks, what target document it produces, and whether a draft is created automatically when the source is submitted.
+**Gate Pass Source** — one record per flow, e.g. "Purchase Order - Inward". Each has a fixed **Flow Code** (`PO-IN`, `DN-OUT`, …) that identifies it, so the display name can be edited freely. Defines the child table, quantity fields, pending formula, allowed statuses, permitted roles, quantity-edit policy, required documents, compliance checks, what target document it produces, and whether a draft is created automatically when the source is submitted.
 
 **Rule overrides** — any flow can override a rule for itself. Block on over-quantity for purchase receipts while only warning on delivery notes, without touching anything else.
 
@@ -129,6 +129,8 @@ Statutory compliance rules stay at **Block** under every preset. Advisory is a s
 | **Gate Pass Auditor** | Read-only, including the full event log. |
 
 Row-level visibility can additionally be restricted by source flow, location, gate and company — each switchable independently, and enforced in both the permission query and `has_permission` so list views, reports and direct URLs are all covered.
+
+**Gate staff and source documents.** A Gate Pass Operator can pull from the whole source doctype (every submitted Purchase Order, say) without holding Buying, Selling or Stock roles. To limit a guard to one location, company or supplier, add Frappe **User Permissions** for that user; the picker and the pull endpoints honour them. See the User Permissions section of the manual.
 
 ---
 

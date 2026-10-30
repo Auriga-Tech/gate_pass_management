@@ -17,3 +17,18 @@
 .gp-compliance-msg { color: var(--text-muted); font-size: var(--text-sm); }
 .gp-compliance-fix { color: var(--text-color); font-size: var(--text-sm); margin-top: 3px; }
 .gp-compliance-no { font-family: var(--font-stack-mono); font-size: var(--text-sm); }
+
+/* Documents on a multi-source gate pass, each with a remove button while a draft. */
+.gp-src-docs { display: flex; flex-wrap: wrap; gap: 6px; }
+.gp-src-doc {
+	display: inline-flex; align-items: center; gap: 2px; padding: 2px 4px 2px 10px;
+	border: 1px solid var(--border-color); border-radius: 999px; background: var(--control-bg);
+}
+.gp-src-doc a { font-weight: 600; }
+.gp-src-x {
+	display: inline-flex; align-items: center; justify-content: center;
+	width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%;
+	background: transparent; color: var(--text-muted); font-size: 16px; line-height: 1; cursor: pointer;
+}
+.gp-src-x:hover, .gp-src-x:focus-visible { background: var(--red-100, #fde8e8); color: var(--red-600, #c0392b); outline: none; }
+.gp-src-note { margin-top: 6px; }

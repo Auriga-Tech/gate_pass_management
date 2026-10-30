@@ -304,3 +304,172 @@ class TestDeclaredDependencies(FrappeTestCase):
 		with setting(enable_qr_code=1):
 			out = get_qr_code("GP-QR-TEST")
 		self.assertTrue(out.startswith("data:image/png;base64,"), out[:60])
+
+
+class TestSourcePickerReachesTheForm(FrappeTestCase):
+	"""Get Items From pulls a document into the open draft.
+
+	The server only returns the open pass, with the new rows merged in, when the
+	form sends it back. Sent nothing, it builds a brand-new pass under a different
+	name: the call succeeds, the dialog closes, and the form on screen stays empty.
+	That is exactly what happened when the draft had no rows yet, and no server
+	test can see it because the server answered correctly.
+	"""
+
+	def _call(self) -> str:
+		js = (APP / "public" / "js" / "gate_pass.js").read_text(encoding="utf-8")
+		start = js.index("api.gate_pass.build_gate_pass")
+		return js[start : start + 900]
+
+	def test_the_open_draft_is_sent_whether_or_not_it_has_rows(self):
+		call = self._call()
+		self.assertIn("target_doc", call)
+		self.assertIn("frm.doc.docstatus === 0", call)
+		self.assertNotIn(
+			"items.length",
+			call,
+			"an empty draft must still be sent, or the pulled rows never reach the form",
+		)
+
+
+class TestGatePassFormLayout(FrappeTestCase):
+	"""The Gate Pass form is three columns wide, with related fields together.
+
+	A column break with nothing after it, or a fourth column, renders as a
+	ragged or cramped form and nothing else would notice.
+	"""
+
+	def _sections(self):
+		doc = _doctype_json("Gate Pass")
+		by = {f["fieldname"]: f for f in doc["fields"]}
+		sections, current = [], None
+		for fieldname in doc["field_order"]:
+			fieldtype = by[fieldname]["fieldtype"]
+			if fieldtype == "Section Break":
+				current = {"name": fieldname, "columns": [[]]}
+				sections.append(current)
+			elif fieldtype == "Column Break":
+				current["columns"].append([])
+			else:
+				current["columns"][-1].append(fieldname)
+		return doc, sections
+
+	def test_every_field_is_placed_exactly_once(self):
+		doc, _sections = self._sections()
+		self.assertEqual(sorted(doc["field_order"]), sorted(f["fieldname"] for f in doc["fields"]))
+		self.assertEqual(len(doc["field_order"]), len(set(doc["field_order"])))
+
+	def test_no_section_has_more_than_three_columns(self):
+		_doc, sections = self._sections()
+		wide = [s["name"] for s in sections if len(s["columns"]) > 3]
+		self.assertEqual(wide, [], "more than three columns")
+
+	def test_no_column_is_empty(self):
+		_doc, sections = self._sections()
+		empty = [s["name"] for s in sections if any(not col for col in s["columns"])]
+		self.assertEqual(empty, [], "a column break with nothing in it")
+
+	def test_the_main_sections_use_all_three_columns(self):
+		_doc, sections = self._sections()
+		three = {s["name"] for s in sections if len(s["columns"]) == 3}
+		for name in ("sb_basic", "sb_gate", "sb_source", "sb_vehicle"):
+			self.assertIn(name, three, f"{name} should be laid out in three columns")
+
+	def test_the_sections_a_feature_switch_hides_still_exist(self):
+		"""Hiding is by section name, so a rename would silently stop hiding it."""
+		from gatepass_management.gate_pass_management.doctype.gate_pass_settings.gate_pass_settings import (
+			HIDDEN_BY_FEATURE,
+		)
+
+		doc = _doctype_json("Gate Pass")
+		names = {f["fieldname"] for f in doc["fields"]}
+		missing = [f for (dt, f) in HIDDEN_BY_FEATURE if dt == "Gate Pass" and f not in names]
+		self.assertEqual(missing, [])
+
+
+class TestPurposeAndSourceCardAreWiredIntoTheForm(FrappeTestCase):
+	"""The Purpose master's direction and default type, and the document list with
+	its remove buttons, are form behaviour that no server test can see."""
+
+	def _js(self) -> str:
+		return (APP / "public" / "js" / "gate_pass.js").read_text(encoding="utf-8")
+
+	def test_the_purpose_dropdown_is_filtered_by_direction(self):
+		js = self._js()
+		self.assertIn('frm.set_query("purpose"', js)
+		self.assertIn("applies_to_direction", js)
+
+	def test_picking_a_purpose_fills_in_its_default_pass_type(self):
+		js = self._js()
+		self.assertIn("default_gate_pass_type", js)
+		self.assertIn('frm.set_value("gate_pass_type"', js)
+
+	def test_each_document_on_a_draft_can_be_removed(self):
+		js = self._js()
+		self.assertIn("gatepass.unlink_source", js)
+		self.assertIn("gp-src-x", js)
+		self.assertIn("r.source_document !== source_document", js)
+
+	def test_the_card_has_a_field_to_draw_into_and_the_free_text_address_is_gone(self):
+		names = {f["fieldname"] for f in _doctype_json("Gate Pass")["fields"]}
+		self.assertIn("source_card", names)
+		self.assertNotIn("address_text", names, "an unused second free-text address field")
+
+
+class TestPartyFieldsAreWiredIntoTheForm(FrappeTestCase):
+	def test_address_and_contact_are_filtered_by_the_party_and_stacked_together(self):
+		js = (APP / "public" / "js" / "gate_pass.js").read_text(encoding="utf-8")
+		self.assertIn('frm.set_query("address"', js)
+		self.assertIn('frm.set_query("contact_person"', js)
+		self.assertIn("party_address_query", js)
+		self.assertIn("party_contact_query", js)
+		self.assertIn("clear_party_links", js)
+
+		doc = _doctype_json("Gate Pass")
+		order = doc["field_order"]
+		party_column = order[order.index("cb_party") + 1 : order.index("sb_source")]
+		self.assertEqual(
+			party_column, ["address", "address_display", "contact_person", "contact_mobile"],
+			"the contact sits under the address, in the second column",
+		)
+
+	def test_remarks_is_small_text(self):
+		field = next(f for f in _doctype_json("Gate Pass")["fields"] if f["fieldname"] == "remarks")
+		self.assertEqual(field["fieldtype"], "Small Text")
+
+
+class TestNothingIsTranslatedAtImport(FrappeTestCase):
+	"""`_()` at module or class level runs once, when the module is first imported.
+
+	The text is then fixed in whichever language that first request used, and is
+	shared by every site the process serves. Frappe's Semgrep rule
+	`frappe-breaks-multitenancy` flags it. A call inside a function is fine: it
+	runs per request. Module-level labels use `_lt`, which translates when read.
+	"""
+
+	def _import_time_calls(self):
+		import ast
+
+		found = []
+
+		def visit(node, in_function, path):
+			for child in ast.iter_child_nodes(node):
+				inside = in_function or isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda))
+				if (
+					isinstance(child, ast.Call)
+					and isinstance(child.func, ast.Name)
+					and child.func.id == "_"
+					and not in_function
+				):
+					found.append(f"{path}:{child.lineno}")
+				visit(child, inside, path)
+
+		for path in APP.rglob("*.py"):
+			if "tests" in path.parts or "__pycache__" in path.parts:
+				continue
+			tree = ast.parse(path.read_text(encoding="utf-8"))
+			visit(tree, False, str(path.relative_to(APP)))
+		return found
+
+	def test_no_translation_call_runs_at_import(self):
+		self.assertEqual(self._import_time_calls(), [], "use _lt, or move the call into a function")

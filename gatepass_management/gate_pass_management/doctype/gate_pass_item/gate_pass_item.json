@@ -178,6 +178,7 @@
    "description": "Maps to Rejected Qty on the target receipt."
   },
   {
+   "description": "Goes to Rejected Qty, in the Rejected Warehouse, on the target receipt.",
    "fieldname": "rejected_qty",
    "fieldtype": "Float",
    "label": "Rejected at Gate",
@@ -316,7 +317,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-05 10:00:00.000000",
+ "modified": "2026-10-30 19:00:00.000000",
  "modified_by": "Administrator",
  "module": "Gate Pass Management",
  "name": "Gate Pass Item",

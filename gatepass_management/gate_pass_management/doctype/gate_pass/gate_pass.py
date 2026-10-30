@@ -24,8 +24,34 @@ from gatepass_management.utils import guards
 from gatepass_management.utils.logger import get_logger
 
 
+# Fields `_compute_totals` and `_set_status` derive, which a change after submission can move.
+DERIVED_AFTER_SUBMIT = (
+	"total_qty", "total_accepted_qty", "total_shortage_qty", "total_damaged_qty",
+	"total_rejected_qty", "total_amount", "total_packages", "total_charges",
+	"has_discrepancy", "processed_qty", "per_processed", "status", "return_status",
+)
+
+
 class GatePass(Document):
 	# --------------------------------------------------------------- hooks
+
+	def before_naming(self):
+		"""The series follows the direction.
+
+		Naming runs before `validate`, so the direction cannot wait to be
+		derived there: a pass built from a flow takes the flow's direction, as
+		`_derive_direction` will, and any other pass takes what was chosen.
+		"""
+		series = series_for_direction(self._naming_direction())
+		if series:
+			self.naming_series = series
+
+	def _naming_direction(self) -> str | None:
+		if self.source_type:
+			direction = frappe.db.get_value("Gate Pass Source", self.source_type, "direction")
+			if direction:
+				return direction
+		return self.direction
 
 	def before_insert(self):
 		self._set_security_officer()
@@ -37,6 +63,8 @@ class GatePass(Document):
 	def validate(self):
 		self._check_amend_allowed()
 		self.derive_fields()
+		self._check_purpose()
+		self._check_party_links()
 		self.run_rules()
 
 	def derive_fields(self):
@@ -47,6 +75,7 @@ class GatePass(Document):
 		`has_discrepancy` or `accepted_qty`, and a test that skipped this step
 		would be checking a half-built document rather than the rule.
 		"""
+		self._check_party_type_allowed()
 		self._apply_party_defaults()
 		self._derive_direction()
 		self._resolve_party()
@@ -68,7 +97,10 @@ class GatePass(Document):
 		self._log("Submitted")
 		self._log("Entered" if self.direction == "In" else "Exited")
 		self._set_status()
-		self.db_set("status", self.status, update_modified=False)
+		# Frappe has already written the row; a plain assignment would not reach it.
+		self.db_set(
+			{"status": self.status, "return_status": self.return_status}, update_modified=False
+		)
 		self._sync_returnable_origin()
 		self._create_auto_target()
 
@@ -81,23 +113,34 @@ class GatePass(Document):
 
 	def on_cancel(self):
 		self.flags.ignore_links = True
-		self.status = "Cancelled"
+		# Written after the row, so it has to be stored explicitly: without this a
+		# cancelled pass kept the status it had (Inside) in the database.
+		self.db_set("status", "Cancelled", update_modified=False)
 		self._log("Cancelled")
 		# A cancelled return leg gives the quantity back to the pass it closed.
 		self._sync_returnable_origin()
 
 	def on_update_after_submit(self):
+		"""Recompute what a post-submit change moves, and store it.
+
+		This runs after Frappe has written the document, and the fields below are
+		not all `allow_on_submit`, so they are written with `db_set` rather than
+		by assignment: assignment left the stored totals stale, and a discrepancy
+		recorded after submission never reached `has_discrepancy`.
+		"""
 		self._compute_totals()
 		self._set_status()
+		self.db_set({f: self.get(f) for f in DERIVED_AFTER_SUBMIT}, update_modified=False)
 
 	def before_save(self):
 		if self.is_new():
-			self._log_pending = "Created"
+			self.flags.log_pending = "Created"
 
 	def on_update(self):
-		if getattr(self, "_log_pending", None):
-			self._log(self._log_pending)
-			self._log_pending = None
+		# A flag, not a field: it only carries a message from before_save to here.
+		if self.flags.log_pending:
+			self._log(self.flags.log_pending)
+			self.flags.log_pending = None
 
 	# ------------------------------------------------------------ defaults
 
@@ -310,6 +353,72 @@ class GatePass(Document):
 					title=_("Party required"),
 				)
 
+	def _check_party_links(self):
+		"""The address and contact must belong to the party they sit under.
+
+		Judged when one of the four fields has changed, so a pass saved before
+		this rule keeps whatever it had.
+		"""
+		if not (self.party_type and self.party):
+			return
+		watched = ("party_type", "party", "address", "contact_person")
+		if not (self.is_new() or any(self.has_value_changed(f) for f in watched)):
+			return
+
+		for fieldname, doctype in (("address", "Address"), ("contact_person", "Contact")):
+			name = self.get(fieldname)
+			if name and not frappe.db.exists(
+				"Dynamic Link",
+				{"parenttype": doctype, "parent": name, "link_doctype": self.party_type, "link_name": self.party},
+			):
+				frappe.throw(
+					_("{0} {1} is not linked to {2} {3}. Choose one of this party's own, or link it "
+					  "to the party on the {0} first.").format(
+						_(doctype), frappe.bold(name), _(self.party_type), frappe.bold(self.party)
+					),
+					title=_("Not this party's {0}").format(_(doctype)),
+				)
+
+	def _check_purpose(self):
+		"""The purpose must be live and must fit the direction.
+
+		Only judged when the purpose or the direction has just changed, so a pass
+		saved long ago keeps its purpose after the master is later retired.
+		"""
+		if not self.purpose:
+			return
+		purpose_changed = self.is_new() or self.has_value_changed("purpose")
+		if not (purpose_changed or self.has_value_changed("direction")):
+			return
+
+		direction, active = frappe.db.get_value(
+			"Gate Pass Purpose", self.purpose, ["applies_to_direction", "is_active"]
+		) or (None, 1)
+
+		if purpose_changed and not cint(active):
+			frappe.throw(
+				_("Purpose {0} is no longer active. Choose another.").format(frappe.bold(self.purpose)),
+				title=_("Purpose inactive"),
+			)
+		if direction not in ("Both", None, "", self.direction):
+			frappe.throw(
+				_("Purpose {0} is for {1} passes, but this pass is {2}.").format(
+					frappe.bold(self.purpose), _(direction), _(self.direction)
+				),
+				title=_("Purpose does not fit"),
+			)
+
+	def _check_party_type_allowed(self):
+		"""Gate Pass Settings > Allowed Party Types. An empty list restricts nothing."""
+		allowed = allowed_party_types()
+		if self.party_type and allowed and self.party_type not in allowed:
+			frappe.throw(
+				_("{0} is not an allowed Party Type. Choose one of: {1}.").format(
+					frappe.bold(_(self.party_type)), ", ".join(_(p) for p in allowed)
+				),
+				title=_("Party Type not allowed"),
+			)
+
 	def _check_amend_allowed(self):
 		"""`allow_amend` shipped in Settings and nothing read it."""
 		if self.amended_from and not cint(guards.get_settings().allow_amend):
@@ -326,6 +435,9 @@ class GatePass(Document):
 				if meta.has_field(fieldname):
 					self.party_name = frappe.db.get_value(self.party_type, self.party, fieldname)
 					break
+		if self.contact_person and not self.contact_mobile:
+			mobile, phone = frappe.db.get_value("Contact", self.contact_person, ["mobile_no", "phone"]) or (None, None)
+			self.contact_mobile = mobile or phone
 		if self.address:
 			from frappe.contacts.doctype.address.address import get_address_display
 
@@ -495,6 +607,25 @@ class GatePass(Document):
 # ===========================================================================
 # Shared computations — one definition, so the three call sites cannot drift.
 # ===========================================================================
+
+
+def allowed_party_types() -> list[str]:
+	"""The party types Gate Pass Settings permits, in the order it lists them."""
+	return [r.party_type for r in guards.get_settings().get("allowed_party_types") or [] if r.party_type]
+
+
+def series_for_direction(direction: str | None) -> str | None:
+	"""The naming series Gate Pass Settings assigns to this direction.
+
+	None when the site keeps one series for both directions, in which case the
+	operator's own choice stands.
+	"""
+	if direction not in ("In", "Out"):
+		return None
+	settings = guards.get_settings()
+	if not cint(settings.separate_series_by_direction):
+		return None
+	return (settings.naming_series_in if direction == "In" else settings.naming_series_out) or None
 
 
 def compute_per_processed(processed_qty, accepted_qty) -> float:

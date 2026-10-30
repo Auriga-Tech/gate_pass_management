@@ -519,8 +519,48 @@ def _restore(spec, children):
 			spec[key] = value
 
 
+# Why the goods are crossing the gate. (purpose, direction, default pass type, note)
+# Names carry no slash: a Gate Pass Purpose is named by its title, and a slash in
+# a document name breaks form URLs.
+STANDARD_PURPOSES = [
+	("Purchase Delivery", "In", "Material", "Goods arriving against a purchase order."),
+	("Sales Dispatch", "Out", "Material", "Goods leaving against a delivery note or sales invoice."),
+	("Job Work - Send to Subcontractor", "Out", "Material", "Raw material sent out for processing."),
+	("Job Work - Receive Back", "In", "Material", "Processed goods coming back from a subcontractor."),
+	("Stock Transfer", "Both", "Material", "Movement between sites or warehouses."),
+	("Customer Return", "In", "Material", "Goods a customer is sending back."),
+	("Supplier Return", "Out", "Material", "Goods being returned to a supplier."),
+	("Sample Dispatch", "Out", "Non-Stock", "Samples that are not part of a sale."),
+	("Repair and Maintenance", "Out", "Returnable Material", "Equipment going out for repair, expected back."),
+	("Returned After Repair", "In", "Returnable Material", "Equipment coming back from repair."),
+	("Tools, Dies and Cylinders on Loan", "Out", "Returnable Material", "Tooling lent out and expected back."),
+	("Scrap Disposal", "Out", "Material", "Scrap or waste leaving the premises."),
+	("Asset Movement", "Both", "Returnable Material", "A fixed asset moving out or back in."),
+	("Visitor or Vendor Visit", "In", "Visitor", "A person visiting, with no goods."),
+	("Vehicle Entry Only", "Both", "Vehicle Only", "A vehicle entering or leaving with no goods."),
+]
+
+
+def seed_purposes():
+	"""Gate Pass Purpose records, so the Purpose field has choices on day one."""
+	for purpose, direction, pass_type, note in STANDARD_PURPOSES:
+		if frappe.db.exists("Gate Pass Purpose", purpose):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Gate Pass Purpose",
+				"purpose": purpose,
+				"applies_to_direction": direction,
+				"default_gate_pass_type": pass_type,
+				"description": note,
+				"is_active": 1,
+			}
+		).insert(ignore_permissions=True)
+
+
 def seed_masters():
 	"""Discrepancy reasons, so the Discrepancy Register is useful on day one."""
+	seed_purposes()
 	reasons = [
 		("Short Delivered", "Shortage", "Supplier"),
 		("Lost in Transit", "Shortage", "Transporter"),

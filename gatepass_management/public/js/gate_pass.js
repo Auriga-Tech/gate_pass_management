@@ -11,11 +11,25 @@ frappe.ui.form.on("Gate Pass", {
 		frm.set_query("transporter", () => ({ filters: { is_transporter: 1 } }));
 		// A cost center from another company is refused by ERPNext when the target
 		// is created, a long way from where it was chosen.
+		// A purpose is offered only where it fits the direction. "Both" fits either.
+		frm.set_query("purpose", () => ({
+			filters: {
+				is_active: 1,
+				...(frm.doc.direction ? { applies_to_direction: ["in", [frm.doc.direction, "Both"]] } : {}),
+			},
+		}));
+		// Only this party's own addresses and contacts.
+		const of_party = () => ({ link_doctype: frm.doc.party_type, link_name: frm.doc.party });
+		frm.set_query("address", () => ({ query: "gatepass_management.api.gate_pass.party_address_query", filters: of_party() }));
+		frm.set_query("contact_person", () => ({ query: "gatepass_management.api.gate_pass.party_contact_query", filters: of_party() }));
+		frm.set_query("party_type", () => ({ query: "gatepass_management.api.gate_pass.party_type_query" }));
 		frm.set_query("cost_center", () => ({ filters: { company: frm.doc.company, is_group: 0 } }));
 		frm.set_query("discrepancy_reason", "items", () => ({ filters: { is_active: 1 } }));
 	},
 
 	refresh(frm) {
+		gatepass.sync_series(frm);
+		frm.trigger("render_source_card");
 		frm.trigger("render_compliance");
 		frm.trigger("add_buttons");
 		frm.trigger("apply_qty_policy");
@@ -43,6 +57,43 @@ frappe.ui.form.on("Gate Pass", {
 
 	direction(frm) {
 		frm.trigger("add_buttons");
+		gatepass.sync_series(frm);
+		gatepass.drop_purpose_if_unfit(frm);
+	},
+
+	// A different party has different addresses and contacts, so the old ones go.
+	party(frm) {
+		gatepass.clear_party_links(frm);
+	},
+
+	party_type(frm) {
+		gatepass.clear_party_links(frm);
+	},
+
+	// Picking a purpose pre-fills the pass type it usually means. The operator can
+	// still change the type afterwards; this only saves the first step.
+	purpose(frm) {
+		if (!frm.doc.purpose || frm.doc.docstatus !== 0) return;
+		frappe.db.get_value("Gate Pass Purpose", frm.doc.purpose, "default_gate_pass_type")
+			.then(({ message }) => {
+				const type = message && message.default_gate_pass_type;
+				if (type && frm.doc.gate_pass_type !== type) frm.set_value("gate_pass_type", type);
+			});
+	},
+
+	render_source_card(frm) {
+		const docs = gatepass.source_documents(frm);
+		// A submitted pass over one document says so in the section above already.
+		const show = docs.length > 1 || (docs.length === 1 && frm.doc.docstatus === 0);
+		frm.toggle_display("sb_source_docs", show);
+		if (show) gatepass.draw_source_card(frm, docs);
+
+		// The server derives this on save; keep the box right while the pass is open.
+		const multi = docs.length > 1 ? 1 : 0;
+		if (frm.doc.docstatus === 0 && cint(frm.doc.is_multi_source) !== multi) {
+			frm.doc.is_multi_source = multi;
+			frm.refresh_field("is_multi_source");
+		}
 	},
 
 	add_buttons(frm) {
@@ -339,6 +390,105 @@ gatepass.record_discrepancy = function (frm) {
 	dialog.show();
 };
 
+// Where the site keeps a series per direction, the series is not the operator's
+// to choose: it follows the direction. The server applies it when the pass is
+// named; this only shows the right one before then. Values set by a pull do not
+// fire the field's own handler, so the pull calls this too.
+gatepass.sync_series = function (frm) {
+	if (!frm.is_new() || !frm.doc.direction) return;
+	frappe.call({
+		method: "gatepass_management.api.gate_pass.get_series_for_direction",
+		args: { direction: frm.doc.direction },
+		callback({ message }) {
+			if (!message) return;
+			if (frm.doc.naming_series !== message) frm.set_value("naming_series", message);
+			frm.set_df_property("naming_series", "read_only", 1);
+		},
+	});
+};
+
+gatepass.clear_party_links = function (frm) {
+	if (frm.doc.docstatus !== 0) return;
+	["address", "address_display", "contact_person", "contact_mobile"].forEach((f) => {
+		if (frm.doc[f]) frm.set_value(f, null);
+	});
+};
+
+gatepass.drop_purpose_if_unfit = function (frm) {
+	if (!frm.doc.purpose || !frm.doc.direction || frm.doc.docstatus !== 0) return;
+	frappe.db.get_value("Gate Pass Purpose", frm.doc.purpose, "applies_to_direction").then(({ message }) => {
+		const fits = !message || !message.applies_to_direction
+			|| ["Both", frm.doc.direction].includes(message.applies_to_direction);
+		if (fits) return;
+		const purpose = frm.doc.purpose;
+		frm.set_value("purpose", null);
+		frappe.show_alert({
+			message: __("Purpose {0} does not apply to {1} passes, so it was cleared.", [purpose, __(frm.doc.direction)]),
+			indicator: "orange",
+		});
+	});
+};
+
+// The distinct source documents on the pass, in the order they were added.
+gatepass.source_documents = function (frm) {
+	return [...new Set((frm.doc.items || []).map((r) => r.source_document).filter(Boolean))];
+};
+
+gatepass.draw_source_card = function (frm, docs) {
+	const esc = frappe.utils.escape_html;
+	const slug = frappe.router.slug(frm.doc.source_doctype || "");
+	// A draft can drop a document again; a submitted pass cannot.
+	const removable = frm.doc.docstatus === 0;
+
+	const chips = docs.map((name) => `
+		<span class="gp-src-doc">
+			<a href="/desk/${slug}/${encodeURIComponent(name)}">${esc(name)}</a>
+			${removable ? `<button type="button" class="gp-src-x" data-doc="${esc(name)}"
+				title="${esc(__("Remove this document from the gate pass"))}"
+				aria-label="${esc(__("Remove {0}", [name]))}">&times;</button>` : ""}
+		</span>`).join("");
+
+	const wrapper = frm.fields_dict.source_card.$wrapper;
+	wrapper.html(`
+		<div class="gp-src-docs">${chips}</div>
+		<div class="text-muted small gp-src-note">${docs.length > 1
+			? __("{0} documents on one gate pass. All must be for the same party.", [docs.length])
+			: __("Pull another document with Get Items From, or remove this one to start over.")}</div>`);
+
+	wrapper.find(".gp-src-x").on("click", (e) => gatepass.unlink_source(frm, $(e.currentTarget).data("doc")));
+};
+
+gatepass.unlink_source = function (frm, source_document) {
+	const rows = (frm.doc.items || []).filter((r) => r.source_document === source_document);
+	frappe.confirm(
+		__("Remove {0} and its {1} item row(s) from this gate pass?", [source_document, rows.length]),
+		() => {
+			frm.doc.items = (frm.doc.items || []).filter((r) => r.source_document !== source_document);
+			frm.doc.items.forEach((r, i) => { r.idx = i + 1; });
+			rows.forEach((r) => { delete locals[r.doctype][r.name]; });
+
+			const remaining = gatepass.source_documents(frm);
+			frm.doc.source_document = remaining[0] || null;
+			frm.doc.is_multi_source = remaining.length > 1 ? 1 : 0;
+
+			// The server recalculates on save; this keeps the screen honest until then.
+			const sum = (field) => frm.doc.items.reduce((t, r) => t + flt(r[field]), 0);
+			frm.doc.total_qty = sum("qty");
+			frm.doc.total_accepted_qty = sum("accepted_qty");
+			frm.doc.total_packages = sum("packages");
+			frm.doc.total_amount = sum("amount");
+
+			frm.refresh_fields();
+			frm.trigger("render_source_card");
+			frm.dirty();
+			frappe.show_alert({
+				message: __("{0} removed. Save to keep the change.", [source_document]),
+				indicator: "orange",
+			});
+		}
+	);
+};
+
 gatepass.pick_source_document = function (frm, source) {
 	// `gate_pass_source` tells the server which flow is being picked for; it
 	// applies that flow's own filters and role gate rather than trusting ours.
@@ -363,15 +513,22 @@ gatepass.pick_source_document = function (frm, source) {
 				method: "gatepass_management.api.gate_pass.build_gate_pass",
 				args: {
 					source_type: source.name,
-					source_name: selections[0],
-					target_doc: frm.doc.docstatus === 0 && frm.doc.items.length
-						? JSON.stringify(frm.doc) : null,
+					// Several documents of one party may share a pass; the server
+					// refuses a second party and a document that is already on it.
+					source_name: JSON.stringify(selections),
+					// Always send the open draft, with rows or without. Without it the
+					// server returns a brand-new pass under another name, and this form
+					// keeps showing the old one, empty.
+					target_doc: frm.doc.docstatus === 0 ? JSON.stringify(frm.doc) : null,
 				},
 				freeze: true,
 				callback({ message }) {
 					if (!message) return;
 					frappe.model.sync(message);
 					frm.refresh();
+					// The rows exist only in the browser until saved; say so.
+					frm.dirty();
+					gatepass.sync_series(frm);
 					cur_dialog && cur_dialog.hide();
 				},
 			});

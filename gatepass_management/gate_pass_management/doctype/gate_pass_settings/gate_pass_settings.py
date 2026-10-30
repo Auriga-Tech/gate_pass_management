@@ -32,6 +32,7 @@ HIDDEN_BY_FEATURE = {
 class GatePassSettings(Document):
 	def validate(self):
 		self._validate_field_rules()
+		self._validate_default_party_type()
 		self._validate_tracking_template()
 		self._apply_naming_series()
 		self._apply_feature_visibility()
@@ -49,6 +50,16 @@ class GatePassSettings(Document):
 						rule.idx, _(rule.document), frappe.bold(rule.fieldname)
 					)
 				)
+
+	def _validate_default_party_type(self):
+		"""A default that the allowed list then refuses would fail every new pass."""
+		allowed = [r.party_type for r in self.allowed_party_types or [] if r.party_type]
+		if self.default_party_type and allowed and self.default_party_type not in allowed:
+			frappe.throw(
+				_("Default Party Type {0} is not in Allowed Party Types. Add it there, or choose "
+				  "another default.").format(frappe.bold(self.default_party_type)),
+				title=_("Default Party Type not allowed"),
+			)
 
 	def _validate_tracking_template(self):
 		if not self.enable_tracking_id or not self.tracking_id_template:
