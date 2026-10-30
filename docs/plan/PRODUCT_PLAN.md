@@ -59,7 +59,7 @@ It records a physical movement across a boundary and reconciles it against the c
 5. **The server is the authority.** Every rule is enforced server-side. Client scripts are convenience only. A rule that exists only as a hidden button is not a rule.
 6. **Auditable by construction.** Every state transition and every post-submit mutation writes an immutable event row. (§9.2)
 7. **Correct under concurrency.** Two gate operators working the same PO at the same instant must not both pass validation. (§8)
-8. **Mobile-first at the gate, desk-first everywhere else.**
+8. **Mobile-first at the gate, desk-first everywhere else.** *(The dedicated gate console arrives in v1.1; v1.0 ships the standard form, the scan and yard endpoints, and QR on the printed slip.)*
 
 ## 5. Positioning & differentiation
 
@@ -73,7 +73,7 @@ Against a paper register: obvious. Against a custom implementation: this is the 
 | **Source-agnostic, configurable mapping** | Works with PO, SCO, SE, DN, SI, PR/SCR returns — and any future doctype — without code. |
 | **Consumption ledger** | Partial gate passes chain correctly. This is the hard part and is what makes it usable beyond toy scenarios. |
 | **Advisory → Mandatory** | Safe adoption path on a live ERP. |
-| **Mobile gate console + QR** | The guard never opens the desk. This alone determines whether the app is actually used. |
+| **Mobile gate console + QR** *(console: v1.1)* | The guard never opens the desk. This alone determines whether the app is actually used. QR on the printed slip ships in v1.0; the console that scans it follows in v1.1. |
 | **Item-less passes** (visitor, vehicle, tools, documents) | Widens the market well past manufacturing. |
 | **Real observability** | An implementer can answer "why didn't this create a receipt?" from the UI. |
 
@@ -93,10 +93,10 @@ Against a paper register: obvious. Against a custom implementation: this is the 
 > **Tiering is specified in full in `GATE_PASS_CONFIG_REFERENCE.md` Part D.** Summarised here.
 
 ### v1.0 — the shipping product (≈13.5 weeks)
-Core Gate Pass In/Out · items with source references · consumption ledger with row locking · `Gate Pass Source` configuration (8 seeded flows) · Settings with 4 enforcement presets and the 37-rule configuration table · field rules · document checklist · charges · weighbridge fields (manual) · returnable lifecycle with overdue detection · target creation for PR/SCR/SE/DN · reverse guards on ERPNext docs · event log + structured logging · notifications (email, and WhatsApp when that app is present) · mobile gate console with QR scan and offline draft queue · 6 reports · workspace · 3 print formats · 5 roles with row-level filtering · full test suite.
+Core Gate Pass In/Out · items with source references · consumption ledger with row locking · `Gate Pass Source` configuration (8 seeded flows) · Settings with 4 enforcement presets and the 37-rule configuration table · field rules · document checklist · charges · weighbridge fields (manual) · returnable lifecycle with overdue detection · target creation for PR/SCR/SE/DN · reverse guards on ERPNext docs · event log + structured logging · notifications (email, and WhatsApp when that app is present) · QR on the printed slip, with `scan` and `yard_status` API endpoints ready for the console · 6 reports · workspace · 3 print formats · 5 roles with row-level filtering · full test suite.
 
-### v1.1 — "People & Process" (≈5 weeks)
-Visitor & people gate passes (`Gate Pass Person`, ID capture, host, overstay and blacklist rules, visitor badge, visitor register) · approval workflow template · `Gate Pass Template` + bulk creation + Auto Repeat · direct label printing.
+### v1.1 — "People & Process" (≈5 weeks, plus the console — re-estimate when scoped)
+**Mobile gate console** (§16.2: scan, confirm, capture, submit; yard view; overdue returns; offline draft queue) · Visitor & people gate passes (`Gate Pass Person`, ID capture, host, overstay and blacklist rules, visitor badge, visitor register) · approval workflow template · `Gate Pass Template` + bulk creation + Auto Repeat · direct label printing.
 
 ### v2.0 — "Integrations & Yard" (scoped after v1.1)
 Device abstraction layer with weighbridge / ANPR / RFID adapters · dock & appointment scheduling · transporter portal · yard occupancy view · analytics module.
@@ -371,7 +371,7 @@ Three layers, each owning a different kind of decision.
 
 **Tab: Required Fields** — `require_location`, `require_gate`, `require_vehicle`, `require_driver`, `require_reference_no`, `require_packaging_check`, `require_documentation_check`, `require_vehicle_photo` (all Check).
 
-**Tab: Feature Toggles** — `enable_returnable`, `enable_charges`, `enable_valuation`, `enable_weighbridge`, `enable_batch_serial`, `enable_cost_center`, `enable_security_officer`, `enable_eway_bill`, `enable_qr_code`, `enable_mobile_console`, `enable_people_tracking` (all Check).
+**Tab: Feature Toggles** — `enable_returnable`, `enable_charges`, `enable_valuation`, `enable_weighbridge`, `enable_batch_serial`, `enable_cost_center`, `enable_security_officer`, `enable_eway_bill`, `enable_qr_code`, `enable_mobile_console` *(v1.1)*, `enable_people_tracking` *(v1.1)* (all Check).
 
 **Tab: Tracking ID** — `enable_tracking_id` (Check) · `tracking_id_template` (Code, Jinja; default `{{ party_code }}/{{ reference_no }}`) · `tracking_id_unique` (Check) · `tracking_id_inherit_field` (Data — fieldname on the source doc to inherit from instead of rendering).
 The template is rendered **once, in `before_insert`, inside a sandboxed Jinja environment**, and is thereafter immutable. Rendering failure raises a validation error naming the template — it does not silently produce an empty string.
@@ -793,7 +793,7 @@ Namespaced `gate_pass_*`, not `custom_*` — an app-owned field should carry the
 | `gatepass.api.ledger.get_pending(source_doctype, source_name)` | `{source_row: pending}` |
 | `gatepass.api.target.create(gate_pass, target_doctype)` | Idempotent, savepointed, structured result |
 | `gatepass.api.gate_pass.query(...)` | Link query — direction, party, and remaining-qty aware |
-| `gatepass.api.gate_pass.scan(code)` | QR / barcode lookup for the mobile console |
+| `gatepass.api.gate_pass.scan(code)` | QR / barcode lookup. Ships in v1.0; the mobile console that calls it is v1.1 |
 | `gatepass.api.gate_pass.stamp(name, event)` | Audited entry/exit stamping |
 | `gatepass.api.gate_pass.amend_timestamp(name, field, value, reason)` | Role-gated, reason mandatory, audited |
 | `gatepass.api.report.yard_status(location)` | Currently-inside summary |
@@ -807,7 +807,9 @@ Every method: permission-checked, rate-limitable, structured return, trace ID on
 ### 16.1 Desk (clerk / manager)
 Standard Frappe form with sections in the order of §9.1. A single **"Get Items From"** button group built dynamically from `Gate Pass Source`. A live pending-qty indicator per row. A connections panel showing targets. An "Amended timestamps" warning indicator where applicable.
 
-### 16.2 Mobile Gate Console — the differentiator
+### 16.2 Mobile Gate Console — the differentiator *(v1.1)*
+> **Scope decision, 2026-10-30:** moved from v1.0 to v1.1. The `scan` and `yard_status` endpoints it needs already exist and are permission-checked; the route and UI below are not built.
+
 A dedicated route (`/gate`) built with Frappe UI, designed for a phone held one-handed by someone wearing gloves:
 
 1. **Scan or search** — QR on a printed gate pass, or type a PO/DN number, or pick a supplier.
@@ -849,7 +851,7 @@ Shortcuts to Gate Pass (In / Out / Overdue Returns), Gate Pass Settings, Gate Pa
 
 | Role | Read | Write | Create | Submit | Cancel | Amend | Notes |
 |---|---|---|---|---|---|---|---|
-| Gate Pass Operator | ✓ | ✓ | ✓ | ✓ | — | — | The guard. Mobile console access. |
+| Gate Pass Operator | ✓ | ✓ | ✓ | ✓ | — | — | The guard. Mobile console access (v1.1). |
 | Gate Pass User | ✓ | ✓ | ✓ | ✓ | — | — | Store/purchase staff |
 | Gate Pass Manager | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | Timestamp amendment, attachment unlock |
 | Gate Pass Auditor | ✓ | — | — | — | — | — | Includes read on Gate Pass Event Log |
@@ -906,7 +908,7 @@ Target: **≥ 85% line coverage, 100% of the numbered rules.**
 | **3 — Targets & guards** | Generic target creation (PR/SCR/SE/DN), `Gate Pass Reference`, idempotency + savepoints, V-34..V-48, cancel/amend semantics, attachment handling, **discrepancy model + V-49..V-56 + accepted-qty flow into targets** | 3.0 |
 | **3b — Compliance** | Provider framework, `Gate Pass Compliance Rule`, India provider (E-Invoice + E-Way Bill), compliance board + refresh, V-57..V-60, override + audit, Compliance Exceptions report | 1.5 |
 | **4 — Returnable & transit** | Returnable lifecycle, return-leg pass, overdue scheduler + notifications, branch-transit flow, **auto-create-draft automation** | 1.5 |
-| **5 — Mobile & print** | Gate console, QR, scan API, yard view, 3 print formats | 1.5 |
+| **5 — Print & QR** | QR, scan API, yard-status API, 3 print formats. *Gate console and yard view moved to v1.1.* | 1.5 |
 | **6 — Reporting** | 9 reports incl. Pending Gate Passes, Discrepancy Register, Compliance Exceptions, Enforcement Impact Preview, workspace, number cards, chart | 1.5 |
 | **7 — Hardening & launch** | Full test pass, performance run, docs site, screenshots, demo data, marketplace listing | 1.5 |
 
