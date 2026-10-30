@@ -1,7 +1,7 @@
 [project]
 name = "gate_pass_management"
 authors = [
-    { name = "Auriga IT", email = "info@aurigait.com" }
+    { name = "Auriga IT", email = "erp@aurigait.com" }
 ]
 description = "Gate Pass Management for ERPNext — control every material movement at the gate."
 requires-python = ">=3.10"

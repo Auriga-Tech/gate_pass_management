@@ -2,7 +2,7 @@ app_name = "gate_pass_management"
 app_title = "Gate Pass Management"
 app_publisher = "Auriga IT"
 app_description = "Control every material movement at the gate. Gate passes for inward and outward movement, reconciled against ERPNext documents."
-app_email = "info@aurigait.com"
+app_email = "erp@aurigait.com"
 app_license = "gpl-3.0"
 
 required_apps = ["frappe/erpnext"]
