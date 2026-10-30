@@ -66,7 +66,23 @@ Click **Get Items From** and pick what matches the paperwork the driver handed y
 
 #### 3. Pick the document
 
-Search by supplier or document number. Select it.
+Search by supplier or document number. Tick it, then press **Get Items**.
+
+**One truck, several orders.** Tick more than one document to put them all on the
+same gate pass, for example two purchase orders from the same supplier on one
+vehicle. The rules:
+
+- All the documents must be for the **same party**. A document from a different
+  supplier is refused with *One Gate Pass covers one party*.
+- A document that is already on the pass is refused, so quantities are never
+  counted twice.
+- You can pull another document into a draft later; it is added to the rows
+  already there.
+
+The pass then shows **Spans Multiple Documents**, and creating the receipts makes
+one for each purchase order.
+
+The rows appear on the form but are not saved until you press **Save**.
 
 The system fills in the items, showing for each one:
 
