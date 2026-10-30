@@ -854,6 +854,28 @@ Shortcuts to Gate Pass (In / Out / Overdue Returns), Gate Pass Settings, Gate Pa
 
 Row-level: by **source type** (derived from `Gate Pass Source.allowed_roles`), by **location**, and by **gate** — each independently switchable in Settings. All three are implemented in `permission_query_conditions` **and** `has_permission`, so list, report, and direct-URL access are all covered.
 
+### Reading the source document
+
+A guard must be able to pull items off a Purchase Order without holding Buying
+read, since that role also carries price and approval rights. So **Gate Pass
+create permission substitutes for read permission on the source doctype**, and
+only for the pull: `get_pending`, `build_gate_pass`, and the picker query
+`source_query`.
+
+**User Permissions continue to apply.** Once the role requirement is relaxed they
+are the only restriction left, so a guard limited to a Company, Gate Pass
+Location, Supplier or Warehouse by User Permission cannot pull another site's
+documents — the picker does not list them and a direct call is refused. Sites
+restrict guards by location this way; it is a deployment step, documented in the
+user manual, not a code change.
+
+The picker needs its own query because the ordinary list query raises
+`PermissionError` on the source doctype, which would have left the relaxation
+unreachable from the UI. `source_query` grants nothing wider than the pull
+endpoints: the flow's `allowed_roles`, the flow's configured `source_filters`
+applied server-side rather than trusted from the client, submitted documents
+only, and the same User Permission filtering.
+
 ---
 
 ## 19. Testing strategy

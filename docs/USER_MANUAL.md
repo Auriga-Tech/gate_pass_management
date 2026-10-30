@@ -330,6 +330,52 @@ Nobody can edit or delete it. Not managers, not System Manager.
 3. Create **Gate Pass Location** records for your sites, and **Gate** records within them.
 4. Assign roles: Operator to security, User to stores and purchase, Manager to supervisors.
 5. Review the twelve shipped **Gate Pass Source** records. Disable any flow you do not use.
+6. If guards should only see their own site, add **User Permissions** — see below.
+
+## What a guard can see, and how to narrow it
+
+A guard has to pull items off a Purchase Order. They must *not* have the Buying
+role, because that role would also let them change prices and approve orders.
+
+So the app grants one narrow exception: **anyone who can create a Gate Pass can
+read a source document for the purpose of building a gate pass from it.** That
+is all it grants. It does not give access to the Purchase Order list, to reports,
+or to editing anything.
+
+It is deliberately an exception for the whole doctype. A guard with the Gate Pass
+Operator role can therefore pull from *any* submitted Purchase Order on the site
+unless you narrow it, and the way you narrow it is **User Permissions**:
+
+| To restrict a guard to… | Add a User Permission on |
+|---|---|
+| One company | **Company** |
+| One supplier or customer | **Supplier** / **Customer** |
+
+Set them under **User** → the guard → *User Permissions*, or from the User
+Permission list. Once set, the picker stops offering documents outside the
+permitted values, and pulling one directly is refused as well.
+
+The restriction works on whatever the source document itself is linked to. If
+your sites are separate **Companies**, a Company permission is all you need. If
+they are not — one company, several plants — restrict on the field the documents
+actually carry, usually **Warehouse** or a branch field of your own, and give
+each guard the values for their site.
+
+**Do this on every multi-site install.** Without a User Permission there is
+nothing restricting which site's documents a guard can pull from.
+
+Two further controls, if you want the restriction expressed per flow instead:
+
+- **Gate Pass Source → Allowed Roles** — which roles may use a flow at all. A
+  flow with no roles listed is open to everyone.
+- **Gate Pass Settings → Restrict by Location / Gate / Company** — the same User
+  Permissions applied to the *gate pass list* as well, so a guard sees only their
+  own site's passes.
+
+> **Prices.** Gate Pass rows carry rate and amount, copied from the source
+> document. If guards should not see values, set the permission level on the
+> **Rate** and **Amount** fields of *Gate Pass Item* to 1 and give level-1 access
+> to supervisors only.
 
 ---
 

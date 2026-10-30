@@ -190,6 +190,65 @@ def source_name_for(source_doctype: str, direction: str = "In") -> str:
 
 
 @contextlib.contextmanager
+def as_user(email: str):
+	"""Run a block as another user, restoring the session afterwards."""
+	before = frappe.session.user
+	frappe.set_user(email)
+	try:
+		yield
+	finally:
+		frappe.set_user(before)
+
+
+def ensure_user(slug: str, roles: list[str]) -> str:
+	"""A system user holding exactly `roles` and nothing else.
+
+	Exactly, because that is the point: a guard who happens to be a Purchase
+	User proves nothing about whether a guard can pull from a Purchase Order.
+	"""
+	email = f"{slug}@gatepass.test"
+	if frappe.db.exists("User", email):
+		user = frappe.get_doc("User", email)
+	else:
+		user = frappe.get_doc(
+			{
+				"doctype": "User",
+				"email": email,
+				"first_name": slug,
+				"user_type": "System User",
+				"send_welcome_email": 0,
+			}
+		)
+		user.insert(ignore_permissions=True)
+
+	user.set("roles", [])
+	for role in roles:
+		user.append("roles", {"role": role})
+	user.save(ignore_permissions=True)
+	frappe.clear_cache(user=email)
+	return email
+
+
+@contextlib.contextmanager
+def user_permission(user: str, allow: str, for_value: str):
+	"""A User Permission for the duration of a test.
+
+	This is the mechanism a site uses to restrict a guard to one company or one
+	location, and the one the source-access relaxation must keep honouring.
+	"""
+	doc = frappe.get_doc(
+		{"doctype": "User Permission", "user": user, "allow": allow, "for_value": for_value}
+	)
+	doc.insert(ignore_permissions=True)
+	frappe.cache.hdel("user_permissions", user)
+	try:
+		yield
+	finally:
+		frappe.delete_doc("User Permission", doc.name, ignore_permissions=True, force=True)
+		frappe.cache.hdel("user_permissions", user)
+
+
+@contextlib.contextmanager
 def rule_action(code: str, action: str, threshold=None):
 	"""Force one rule to a known action for the duration of a test.
 

@@ -32,7 +32,6 @@ def list_sources(direction: str | None = None, source_doctype: str | None = None
 	if source_doctype:
 		filters["source_doctype"] = source_doctype
 
-	roles = set(frappe.get_roles())
 	out = []
 
 	for source in frappe.get_all(
@@ -43,25 +42,209 @@ def list_sources(direction: str | None = None, source_doctype: str | None = None
 		        "source_filters", "party_type", "qty_policy"],
 		order_by="sequence asc, source_name asc",
 	):
-		allowed = {
-			r.role
-			for r in frappe.get_all(
-				"Gate Pass Role",
-				filters={"parent": source.name, "parentfield": "allowed_roles"},
-				fields=["role"],
-			)
-		}
-		if allowed and not (allowed & roles):
+		if not _flow_roles_allow(source.name):
 			continue
 		out.append(source)
 
 	return out
 
 
+def _flow_roles_allow(flow: str, user: str | None = None) -> bool:
+	"""Whether this user's roles permit a flow.
+
+	A flow with no `allowed_roles` is open to everyone — the safe default, so
+	configuring one flow does not silently hide the rest.
+	"""
+	allowed = {
+		r.role
+		for r in frappe.get_all(
+			"Gate Pass Role",
+			filters={"parent": flow, "parentfield": "allowed_roles"},
+			fields=["role"],
+		)
+	}
+	return not allowed or bool(allowed & set(frappe.get_roles(user)))
+
+
+# -------------------------------------------------------- source access
+#
+# A guard needs items off a Purchase Order or a Delivery Note without holding a
+# Buying, Selling or Stock role — roles that would also let them change prices
+# and approve orders, which is exactly what a gate operator should never have.
+# So whoever may create a Gate Pass may read a source document for that purpose.
+#
+# User Permissions still apply, and deliberately so: once the role requirement
+# is relaxed they are the only restriction left. A guard limited to one company
+# or one location by User Permission cannot pull another site's orders. Dropping
+# that as well would turn a scoped exception into an open door.
+
+
+def _source_read_allowed(source_doctype: str, source_name: str) -> bool:
+	if frappe.has_permission(source_doctype, "read", source_name):
+		return True
+	if not frappe.has_permission("Gate Pass", "create"):
+		return False
+	return _passes_user_permissions(source_doctype, source_name)
+
+
+def _check_source_access(source_doctype: str, source_name: str):
+	"""Throwing form of `_source_read_allowed`, for the pull endpoints."""
+	if _source_read_allowed(source_doctype, source_name):
+		return
+	frappe.throw(
+		_("You do not have permission to read {0} {1}.").format(_(source_doctype), source_name),
+		frappe.PermissionError,
+	)
+
+
+def _passes_user_permissions(doctype: str, name: str) -> bool:
+	"""The authoritative single-document check, straight from the framework."""
+	from frappe.permissions import has_user_permission
+
+	if not name:
+		return True
+	if not frappe.db.exists(doctype, name):
+		return False
+	return bool(has_user_permission(frappe.get_doc(doctype, name), ptype="read"))
+
+
+def _user_permission_map(doctype: str) -> dict[str, set[str]]:
+	"""Allowed values per link field, for filtering a list of candidate rows.
+
+	`_passes_user_permissions` loads a document, which is right for the one
+	document being pulled and far too expensive for a picker page. This mirrors
+	`frappe.model.db_query.DatabaseQuery.add_user_permissions` — the logic an
+	ordinary list view applies and that `source_query` cannot reach, because
+	Frappe skips user permissions entirely once the role check is bypassed.
+
+	An empty map means this user is unrestricted and every row is permitted.
+
+	Like the framework's version this reads the parent's link fields only, while
+	`_passes_user_permissions` also walks child rows. That asymmetry is Frappe's
+	own and is deliberate here: the picker shows exactly what an ordinary list
+	view would show, and the pull refuses exactly what opening the document
+	would refuse. Widening this to child tables would make the picker disagree
+	with every other list on the site.
+	"""
+	from frappe.permissions import get_allowed_docs_for_doctype, get_user_permissions
+
+	permissions = get_user_permissions(frappe.session.user)
+	if not permissions:
+		return {}
+
+	meta = frappe.get_meta(doctype)
+	# The document's own name counts as a link to its own doctype, as Frappe does.
+	fields = [*meta.get_link_fields(), frappe._dict(fieldname="name", options=doctype)]
+
+	out = {}
+	for field in fields:
+		if field.get("ignore_user_permissions") or field.options not in permissions:
+			continue
+		allowed = get_allowed_docs_for_doctype(permissions[field.options], doctype)
+		if allowed:
+			out[field.fieldname] = {str(v) for v in allowed}
+	return out
+
+
+def _row_permitted(row: dict, permission_map: dict[str, set[str]], strict: bool) -> bool:
+	for fieldname, allowed in permission_map.items():
+		value = row.get(fieldname)
+		if not value:
+			# An empty link is not a restriction unless the site says it is.
+			if strict:
+				return False
+			continue
+		if str(value) not in allowed:
+			return False
+	return True
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def source_query(doctype, txt, searchfield, start, page_len, filters):
+	"""Source documents a gate pass may be built from — the picker's list.
+
+	The picker cannot use the ordinary list query: that needs read permission on
+	Purchase Order, which a gate operator does not have, so the dialog came back
+	empty and the relaxation above was unreachable from the UI.
+
+	This grants nothing wider than the pull endpoints already allow: the flow's
+	own role gate and configured filters, submitted documents only, and the same
+	User Permission filtering.
+	"""
+	filters = dict(filters or {})
+	flow = filters.pop("gate_pass_source", None)
+	if not flow:
+		frappe.throw(_("No Gate Pass Source given."))
+
+	config = frappe.get_cached_doc("Gate Pass Source", flow)
+	if config.source_doctype != doctype:
+		frappe.throw(
+			_("{0} does not draw from {1}.").format(config.name, _(doctype)), frappe.PermissionError
+		)
+	if not frappe.has_permission("Gate Pass", "create") or not _flow_roles_allow(config.name):
+		frappe.throw(
+			_("You do not have permission to use {0}.").format(config.name), frappe.PermissionError
+		)
+
+	meta = frappe.get_meta(doctype)
+	conditions = {"docstatus": 1}
+	# The flow's configured filters are applied here rather than trusted from the
+	# client, which is free to send whatever it likes. They are hand-entered JSON,
+	# so a malformed value narrows nothing instead of returning a server error.
+	configured = json.loads(config.source_filters or "{}")
+	if isinstance(configured, dict):
+		conditions.update(configured)
+	for key, value in filters.items():
+		if key != "docstatus" and (key == "name" or meta.has_field(key)):
+			conditions[key] = value
+
+	party_field = frappe.scrub(config.party_type) if config.party_type else None
+	if not party_field or not meta.has_field(party_field):
+		party_field = None
+	date_field = next(
+		(f for f in ("posting_date", "transaction_date", "schedule_date") if meta.has_field(f)), None
+	)
+
+	permission_map = _user_permission_map(doctype)
+	strict = bool(frappe.get_system_settings("apply_strict_user_permissions"))
+
+	fields = ["name"]
+	for field in (party_field, date_field, *permission_map):
+		if field and field not in fields:
+			fields.append(field)
+
+	or_filters = {}
+	if txt:
+		or_filters["name"] = ["like", f"%{txt}%"]
+		if party_field:
+			or_filters[party_field] = ["like", f"%{txt}%"]
+
+	# Rows the permission map rejects are dropped after the fetch, so an
+	# unrestricted user pays nothing and a restricted one still fills a page.
+	fetch = page_len if not permission_map else min(page_len * 3, 200)
+
+	rows = frappe.get_all(
+		doctype,
+		filters=conditions,
+		or_filters=or_filters or None,
+		fields=fields,
+		order_by=f"{date_field} desc" if date_field else "modified desc",
+		limit_start=start,
+		limit_page_length=fetch,
+		ignore_permissions=True,
+	)
+
+	if permission_map:
+		rows = [r for r in rows if _row_permitted(r, permission_map, strict)][:page_len]
+
+	return rows
+
+
 @frappe.whitelist()
 def get_pending(source_doctype: str, source_name: str, source_type: str) -> dict:
 	"""Pending quantity per source row. Display only — see ledger.py."""
-	frappe.has_permission(source_doctype, "read", source_name, throw=True)
+	_check_source_access(source_doctype, source_name)
 	config = frappe.get_cached_doc("Gate Pass Source", source_type)
 	return ledger.pending_qty(source_doctype, source_name, config)
 
@@ -74,7 +257,7 @@ def build_gate_pass(source_type: str, source_name: str, target_doc=None, rows=No
 	implementations this app replaces are now twelve rows of configuration.
 	"""
 	config = frappe.get_cached_doc("Gate Pass Source", source_type)
-	frappe.has_permission(config.source_doctype, "read", source_name, throw=True)
+	_check_source_access(config.source_doctype, source_name)
 
 	if isinstance(rows, str):
 		rows = json.loads(rows)

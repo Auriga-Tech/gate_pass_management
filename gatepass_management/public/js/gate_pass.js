@@ -337,15 +337,23 @@ gatepass.record_discrepancy = function (frm) {
 };
 
 gatepass.pick_source_document = function (frm, source) {
-	const filters = source.source_filters ? JSON.parse(source.source_filters) : {};
+	// `gate_pass_source` tells the server which flow is being picked for; it
+	// applies that flow's own filters and role gate rather than trusting ours.
+	const filters = { gate_pass_source: source.name };
+	const party_field = source.party_type && source.party_type !== "Company"
+		? frappe.scrub(source.party_type) : null;
 
 	new frappe.ui.form.MultiSelectDialog({
 		doctype: source.source_doctype,
 		target: frm,
-		setters: source.party_type && source.party_type !== "Company"
-			? { [frappe.scrub(source.party_type)]: frm.doc.party || null } : {},
-		date_field: "posting_date",
-		get_query: () => ({ filters }),
+		setters: party_field ? { [party_field]: frm.doc.party || null } : {},
+		columns: party_field ? ["name", party_field] : ["name"],
+		// A custom query, because the ordinary list query needs read permission
+		// on the source doctype and a gate operator does not have it.
+		get_query: () => ({
+			query: "gatepass_management.api.gate_pass.source_query",
+			filters,
+		}),
 		action(selections) {
 			if (!selections || !selections.length) return;
 			frappe.call({
