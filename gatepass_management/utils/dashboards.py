@@ -18,9 +18,16 @@ field on Gate Pass:
     (`<target>.gate_pass`) and in the pass's references table, neither of which
     Frappe's connection count can follow backwards.
 
-Rather than lose the second kind, the target-side passes are added to the same
-connection through `internal_links`-style preloading in `get_gate_pass_names`,
-which the form script uses to show them alongside.
+The second kind is counted through `internal_and_external_links`, Frappe's own
+mechanism for a document that points at the other one through a field of its
+own: where `gate_pass` is set it is reported as the connection, and where it is
+not the ordinary count above applies. So a Purchase Receipt shows the pass that
+produced it, and a Purchase Order still shows the passes raised from it.
+
+One limit is Frappe's, not ours. A document that is both — a receipt produced by
+one pass and itself the source of a return pass — reports only the pass that
+produced it, because the internal link wins over the count. The View > Gate Pass
+button on source forms lists both through `get_gate_pass_names`.
 """
 
 import frappe
@@ -44,9 +51,15 @@ def _dashboard(doctype: str):
 		data.setdefault("transactions", [])
 		data.setdefault("non_standard_fieldnames", {})
 		data.setdefault("dynamic_links", {})
+		data.setdefault("internal_and_external_links", {})
 
 		data["non_standard_fieldnames"]["Gate Pass"] = "source_document"
 		data["dynamic_links"]["source_document"] = [doctype, "source_doctype"]
+
+		# Only where the document carries the field. Purchase Order and
+		# Subcontracting Order are only ever sources, so they have none.
+		if frappe.get_meta(doctype).has_field("gate_pass"):
+			data["internal_and_external_links"]["Gate Pass"] = "gate_pass"
 
 		data["transactions"].append({"label": _("Gate"), "items": ["Gate Pass"]})
 		return data
