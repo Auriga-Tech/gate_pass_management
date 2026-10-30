@@ -95,3 +95,53 @@ class TestRepairPatch(FrappeTestCase):
 		stored = frappe.db.get_value("Gate Pass", gp.name, ["total_shortage_qty", "has_discrepancy"], as_dict=True)
 		self.assertEqual(stored.total_shortage_qty, 3)
 		self.assertEqual(stored.has_discrepancy, 1)
+
+
+class TestHooksOnlyCallMethodsThatStoreWhatTheyChange(FrappeTestCase):
+	"""Frappe's audit rule `frappe-modifying-but-not-committing-other-method`.
+
+	`on_submit`, `on_cancel`, `on_update` and `on_update_after_submit` run after the
+	row is written. A method they call that assigns `self.<field>` changes the object
+	and nothing else, so the database keeps the old value. Such methods must return
+	what they computed, and the hook stores it.
+	"""
+
+	HOOKS = ("on_submit", "on_cancel", "on_update", "on_update_after_submit")
+
+	def test_no_helper_called_from_a_post_write_hook_assigns_a_document_field(self):
+		import ast
+		import pathlib
+
+		from gate_pass_management.tests.test_wiring import MODULE_DIR, _doctype_json
+
+		fields = {f["fieldname"] for f in _doctype_json("Gate Pass")["fields"]}
+		source = (MODULE_DIR / "doctype" / "gate_pass" / "gate_pass.py").read_text(encoding="utf-8")
+		cls = next(n for n in ast.parse(source).body if isinstance(n, ast.ClassDef) and n.name == "GatePass")
+		methods = {n.name: n for n in cls.body if isinstance(n, ast.FunctionDef)}
+
+		def assigned_fields(fn):
+			found = set()
+			for node in ast.walk(fn):
+				targets = node.targets if isinstance(node, ast.Assign) else [getattr(node, "target", None)] if isinstance(node, (ast.AugAssign, ast.AnnAssign)) else []
+				for t in targets:
+					if isinstance(t, ast.Attribute) and isinstance(t.value, ast.Name) and t.value.id == "self" and t.attr in fields:
+						found.add(t.attr)
+			return found
+
+		problems = []
+		for hook in self.HOOKS:
+			if hook not in methods:
+				continue
+			for node in ast.walk(methods[hook]):
+				if (
+					isinstance(node, ast.Call)
+					and isinstance(node.func, ast.Attribute)
+					and isinstance(node.func.value, ast.Name)
+					and node.func.value.id == "self"
+					and node.func.attr in methods
+					and node.func.attr not in self.HOOKS
+				):
+					changed = assigned_fields(methods[node.func.attr])
+					if changed:
+						problems.append(f"{hook} calls {node.func.attr}, which assigns {sorted(changed)}")
+		self.assertEqual(problems, [], "return the values and store them with db_set in the hook")

@@ -24,14 +24,6 @@ from gate_pass_management.utils import guards, tracking
 from gate_pass_management.utils.logger import get_logger
 
 
-# Fields `_compute_totals` and `_set_status` derive, which a change after submission can move.
-DERIVED_AFTER_SUBMIT = (
-	"total_qty", "total_accepted_qty", "total_shortage_qty", "total_damaged_qty",
-	"total_rejected_qty", "total_amount", "total_packages", "total_charges",
-	"has_discrepancy", "processed_qty", "per_processed", "status", "return_status",
-)
-
-
 class GatePass(Document):
 	# --------------------------------------------------------------- hooks
 
@@ -81,10 +73,10 @@ class GatePass(Document):
 		self._resolve_party()
 		self._apply_qty_policy()
 		self._compute_row_values()
-		self._compute_totals()
+		self.update(self._derived_totals())
 		self._compute_weights()
 		self._refresh_compliance()
-		self._set_status()
+		self.update(self._derived_status())
 
 	def before_submit(self):
 		self._stamp_timestamps()
@@ -96,11 +88,8 @@ class GatePass(Document):
 	def on_submit(self):
 		self._log("Submitted")
 		self._log("Entered" if self.direction == "In" else "Exited")
-		self._set_status()
 		# Frappe has already written the row; a plain assignment would not reach it.
-		self.db_set(
-			{"status": self.status, "return_status": self.return_status}, update_modified=False
-		)
+		self.db_set(self._derived_status(), update_modified=False)
 		self._sync_returnable_origin()
 		self._create_auto_target()
 
@@ -123,14 +112,14 @@ class GatePass(Document):
 	def on_update_after_submit(self):
 		"""Recompute what a post-submit change moves, and store it.
 
-		This runs after Frappe has written the document, and the fields below are
-		not all `allow_on_submit`, so they are written with `db_set` rather than
-		by assignment: assignment left the stored totals stale, and a discrepancy
-		recorded after submission never reached `has_discrepancy`.
+		This runs after Frappe has written the document, and the derived fields are
+		not all `allow_on_submit`, so they are written with `db_set` rather than by
+		assignment: assignment left the stored totals stale, and a discrepancy
+		recorded after submission never reached `has_discrepancy`. The totals go
+		first because the status reads the processed percentage.
 		"""
-		self._compute_totals()
-		self._set_status()
-		self.db_set({f: self.get(f) for f in DERIVED_AFTER_SUBMIT}, update_modified=False)
+		self.db_set(self._derived_totals(), update_modified=False)
+		self.db_set(self._derived_status(), update_modified=False)
 
 	def before_save(self):
 		if self.is_new():
@@ -480,25 +469,36 @@ class GatePass(Document):
 			if row.item_code and not row.stock_uom:
 				row.stock_uom = frappe.db.get_value("Item", row.item_code, "stock_uom")
 
-	def _compute_totals(self):
-		self.total_qty = sum(flt(r.qty) for r in self.items)
-		self.total_accepted_qty = sum(flt(r.accepted_qty) for r in self.items)
-		self.total_shortage_qty = sum(flt(r.shortage_qty) for r in self.items)
-		self.total_damaged_qty = sum(flt(r.damaged_qty) for r in self.items)
-		self.total_rejected_qty = sum(flt(r.rejected_qty) for r in self.items)
-		self.total_amount = sum(flt(r.amount) for r in self.items)
-		settings = guards.get_settings()
-		self.total_packages = (
-			sum(cint(r.packages) for r in self.items) if cint(settings.enable_packages) else 0
-		)
-		self.total_charges = sum(flt(c.amount) for c in self.charges)
+	def _derived_totals(self) -> dict:
+		"""Every total the rows, charges and references add up to. Assigns nothing.
 
-		self.has_discrepancy = 1 if (
-			self.total_shortage_qty or self.total_damaged_qty or self.total_rejected_qty
-		) else 0
+		Returning the values rather than setting them keeps each caller honest about
+		what it does next: `validate` assigns them, and the hooks that run after the
+		row is written store them.
+		"""
+		shortage = sum(flt(r.shortage_qty) for r in self.items)
+		damaged = sum(flt(r.damaged_qty) for r in self.items)
+		rejected = sum(flt(r.rejected_qty) for r in self.items)
+		accepted = sum(flt(r.accepted_qty) for r in self.items)
+		processed = sum(flt(r.qty) for r in self.references if r.link_type == "Target")
 
-		self.processed_qty = sum(flt(r.qty) for r in self.references if r.link_type == "Target")
-		self.per_processed = compute_per_processed(self.processed_qty, self.total_accepted_qty)
+		return {
+			"total_qty": sum(flt(r.qty) for r in self.items),
+			"total_accepted_qty": accepted,
+			"total_shortage_qty": shortage,
+			"total_damaged_qty": damaged,
+			"total_rejected_qty": rejected,
+			"total_amount": sum(flt(r.amount) for r in self.items),
+			"total_packages": (
+				sum(cint(r.packages) for r in self.items)
+				if cint(guards.get_settings().enable_packages)
+				else 0
+			),
+			"total_charges": sum(flt(c.amount) for c in self.charges),
+			"has_discrepancy": 1 if (shortage or damaged or rejected) else 0,
+			"processed_qty": processed,
+			"per_processed": compute_per_processed(processed, accepted),
+		}
 
 	def _compute_weights(self):
 		if self.gross_weight or self.tare_weight:
@@ -529,9 +529,9 @@ class GatePass(Document):
 
 	# ---------------------------------------------------------------- status
 
-	def _set_status(self):
-		self.return_status = derive_return_status(self)
-		self.status = derive_status(self)
+	def _derived_status(self) -> dict:
+		"""The status and return status the document's current state gives. Assigns nothing."""
+		return {"return_status": derive_return_status(self), "status": derive_status(self)}
 
 	# ----------------------------------------------------------------- rules
 

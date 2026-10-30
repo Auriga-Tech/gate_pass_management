@@ -20,12 +20,11 @@ def execute():
 
 	for name in frappe.get_all("Gate Pass", filters={"docstatus": 1}, pluck="name"):
 		doc = frappe.get_doc("Gate Pass", name)
-		stored = {f: doc.get(f) for f in _TOTALS}
-		doc._compute_totals()
+		computed = doc._derived_totals()
 		changed = {
-			f: doc.get(f)
+			f: computed[f]
 			for f in _TOTALS
-			if flt(doc.get(f)) != flt(stored[f]) and f not in ("processed_qty", "per_processed")
+			if flt(computed[f]) != flt(doc.get(f)) and f not in ("processed_qty", "per_processed")
 		}
 		if changed:
 			frappe.db.set_value("Gate Pass", name, changed, update_modified=False)
