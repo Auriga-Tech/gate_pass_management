@@ -7,7 +7,14 @@ description = "Gate Pass Management for ERPNext — control every material movem
 requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]
-dependencies = []
+# Both are already pulled in by Frappe (PyQRCode) and ERPNext (pypng), and these
+# pins match theirs. They are declared anyway because gatepass_management.utils.jinja
+# imports them directly: relying on a transitive dependency works until the one
+# that supplies it drops it.
+dependencies = [
+    "PyQRCode~=1.2.1",
+    "pypng~=0.20220715.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/aurigait/gatepass_management"

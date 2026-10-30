@@ -276,3 +276,31 @@ class TestReportsRun(FrappeTestCase):
 			with self.subTest(report=name):
 				result = run(name, filters=base, ignore_prepared_report=True)
 				self.assertIsNotNone(result.get("columns"), f"{name} returned no columns")
+
+
+class TestDeclaredDependencies(FrappeTestCase):
+	def test_the_qr_libraries_are_declared(self):
+		"""`utils.jinja` imports these directly. They arrive today through Frappe
+		and ERPNext, which is exactly the kind of dependency that disappears
+		without anyone touching this app."""
+		try:
+			import tomllib
+		except ImportError:
+			self.skipTest("tomllib needs Python 3.11")
+
+		pyproject = APP.parent / "pyproject.toml"
+		declared = {
+			re.split(r"[~=<>!\s]", dep, maxsplit=1)[0].lower()
+			for dep in tomllib.loads(pyproject.read_text())["project"]["dependencies"]
+		}
+		self.assertTrue(
+			{"pyqrcode", "pypng"} <= declared, f"pyproject.toml declares {sorted(declared)}"
+		)
+
+	def test_a_qr_code_is_actually_produced(self):
+		from gatepass_management.tests.utils import setting
+		from gatepass_management.utils.jinja import get_qr_code
+
+		with setting(enable_qr_code=1):
+			out = get_qr_code("GP-QR-TEST")
+		self.assertTrue(out.startswith("data:image/png;base64,"), out[:60])
