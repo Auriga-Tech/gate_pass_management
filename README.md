@@ -68,7 +68,7 @@ bench get-app https://github.com/Auriga-Tech/gate_pass_management --branch versi
 ```
 
 ```bash
-bench --site your-site.local install-app gatepass_management
+bench --site your-site.local install-app gate_pass_management
 ```
 
 Requires **Frappe v16** and **ERPNext v16**. `version-16` is the active branch.
@@ -175,7 +175,7 @@ Common questions:
 Issues and pull requests are welcome.
 
 ```bash
-bench --site your-site.local run-tests --app gatepass_management
+bench --site your-site.local run-tests --app gate_pass_management
 ```
 
 Before opening a PR:
