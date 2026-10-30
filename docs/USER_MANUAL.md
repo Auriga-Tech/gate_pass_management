@@ -162,6 +162,11 @@ What to do:
 3. Press **Re-check** on the gate pass. You will not lose anything you typed.
 4. When it turns green, submit.
 
+Once the check passes, the **E-Way Bill No** field on the gate pass fills in
+by itself with the number from the invoice. If you had already typed a number,
+the app leaves yours alone — so if the paper in the driver's hand disagrees with
+the system, the difference stays visible rather than being quietly replaced.
+
 > **Why this matters.** A vehicle stopped without an E-Way Bill can be detained along with the goods, and the penalty falls on your company. This check is the last chance to catch it — once the vehicle is on the road, it is too late.
 
 If it is genuinely urgent, a manager can override the check. They must give a reason, and it is recorded permanently against their name.
@@ -246,6 +251,7 @@ The receipt is created with:
 - **Accepted quantity** from the gate — what actually arrived, not what was ordered
 - **Damaged quantity** as rejected qty, in the rejected warehouse
 - Taxes, currency and terms from the original order, because the app uses ERPNext's own mapper
+- The **Cost Center**, if one was chosen on the gate pass. Left blank, the receipt keeps the order's own cost center; chosen, it replaces it on every line
 - A link back to the gate pass
 
 Check it, then submit as normal.

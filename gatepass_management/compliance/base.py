@@ -55,6 +55,11 @@ class ComplianceResult:
 	detail_url: str | None = None
 	threshold_amount: float | None = None
 	document_value: float | None = None
+	# Fieldname on Gate Pass that should receive `document_no`, when the check
+	# produced one. Lets a provider say "this is the E-Way Bill number" without
+	# the runner knowing anything about E-Way Bills. Only an empty field is
+	# filled: what the operator typed is never overwritten.
+	populates: str | None = None
 
 	@property
 	def passed(self) -> bool:

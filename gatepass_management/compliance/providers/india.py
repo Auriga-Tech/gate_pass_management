@@ -165,6 +165,7 @@ class IndiaComplianceProvider(ComplianceProvider):
 				message=_("E-Way Bill generated."),
 				document_value=value, threshold_amount=threshold,
 				detail_url=self._url(source_doc),
+				populates="eway_bill_no",
 			)
 
 		if threshold and value < threshold:

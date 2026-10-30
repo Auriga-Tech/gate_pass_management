@@ -121,6 +121,23 @@ def sync_to_gate_pass(gate_pass, results: list[ComplianceResult]):
 
 	gate_pass.compliance_status = roll_up(results)
 	gate_pass.compliance_checked_on = now_datetime()
+	_populate_fields(gate_pass, results)
+
+
+def _populate_fields(gate_pass, results: list[ComplianceResult]):
+	"""Copy a check's document number onto the field the provider names.
+
+	Fill-if-empty only. The operator may have keyed the number from the paper
+	copy in the driver's hand, and silently replacing it with the system's
+	value would hide exactly the discrepancy a gate check exists to catch.
+	"""
+	meta = frappe.get_meta("Gate Pass")
+	for r in results:
+		if not (r.populates and r.document_no and r.passed):
+			continue
+		if not meta.has_field(r.populates) or gate_pass.get(r.populates):
+			continue
+		gate_pass.set(r.populates, r.document_no)
 
 
 def roll_up(results: list[ComplianceResult]) -> str:
