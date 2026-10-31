@@ -23,6 +23,16 @@ reintroduce a bug the design exists to prevent.
 
 ## Regenerating the Word documents
 
-`word/` is generated from the Markdown, so edit the Markdown and regenerate —
+`word/` is generated from the Markdown, so edit the Markdown and regenerate -
 never edit the `.docx` by hand. Both follow the Auriga IT document standard
 (cover page, running header, address footer, brand palette).
+
+```bash
+cd docs/tools
+npm install
+npm run build
+```
+
+`build_word.js` converts `USER_MANUAL.md` and `../FEATURES.md` into the two
+documents in `word/`, stamping today's date and the version from the command line
+(`--version`, default 1.0.0). Run it again whenever either Markdown file changes.

@@ -1,0 +1,13 @@
+{
+  "name": "gate-pass-management-docs",
+  "private": true,
+  "description": "Builds the Word documents in ../word from the Markdown, in the Auriga IT document standard.",
+  "scripts": {
+    "build": "node build_word.js ../USER_MANUAL.md \"../word/Gate Pass Management - User Manual.docx\" --doc \"User Manual\" && node build_word.js ../../FEATURES.md \"../word/Gate Pass Management - Feature List.docx\" --doc \"Feature List\""
+  },
+  "dependencies": {
+    "docx": "^9.0.0",
+    "jszip": "^3.10.1",
+    "sharp": "^0.33.0"
+  }
+}
