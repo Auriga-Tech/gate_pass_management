@@ -12,7 +12,7 @@ import json
 
 import frappe
 from frappe import _
-from frappe.utils import cint, flt, get_link_to_form, now_datetime, today
+from frappe.utils import cint, flt, get_datetime, get_link_to_form, now_datetime, today
 
 from gatepass_management import ledger
 from gatepass_management.gate_pass_management.doctype.gate_pass_event_log.api import log_event
@@ -133,8 +133,17 @@ def _add_source(gp, config, source_name: str, selected: set):
 			title=_("Different party"),
 		)
 
+	source_company = source_doc.get("company")
+	if gp.items and gp.company and source_company and gp.company != source_company:
+		frappe.throw(
+			_("{0} {1} belongs to {2}, but this Gate Pass is for {3}. One Gate Pass covers one company.").format(
+				_(config.source_doctype), source_name, source_company, gp.company
+			),
+			title=_("Different company"),
+		)
+
 	first = not gp.items
-	gp.company = source_doc.get("company") or gp.company
+	gp.company = source_company or gp.company
 	gp.source_type = config.name
 	gp.source_doctype = config.source_doctype
 	gp.source_sub_type = config.sub_type
@@ -254,8 +263,24 @@ def amend_timestamp(gate_pass: str, fieldname: str, value: str, reason: str):
 	_require_role("timestamp_edit_roles", _("amend entry and exit times"))
 	frappe.has_permission("Gate Pass", "write", gate_pass, throw=True)
 
-	old = frappe.db.get_value("Gate Pass", gate_pass, fieldname)
-	frappe.db.set_value("Gate Pass", gate_pass, fieldname, value, update_modified=False)
+	current = frappe.db.get_value(
+		"Gate Pass", gate_pass, ["docstatus", "entry_datetime", "exit_datetime"], as_dict=True
+	)
+	if not current or current.docstatus != 1:
+		frappe.throw(_("Only a submitted Gate Pass can have its entry or exit time amended."))
+
+	new_time = _parse_datetime(value)
+	other = current.exit_datetime if fieldname == "entry_datetime" else current.entry_datetime
+	if other:
+		entry, exit_ = (new_time, get_datetime(other)) if fieldname == "entry_datetime" else (
+			get_datetime(other), new_time
+		)
+		if exit_ < entry:
+			frappe.throw(_("Exit time cannot be before entry time."), title=_("Invalid time"))
+
+	value = str(new_time)
+	old = current.get(fieldname)
+	frappe.db.set_value("Gate Pass", gate_pass, fieldname, new_time, update_modified=False)
 	frappe.db.set_value("Gate Pass", gate_pass, "timestamps_amended", 1, update_modified=False)
 
 	log_event(
@@ -270,6 +295,15 @@ def amend_timestamp(gate_pass: str, fieldname: str, value: str, reason: str):
 		extra={"gate_pass": gate_pass, "field": fieldname, "old": str(old), "new": value},
 	)
 	return {"ok": True}
+
+
+def _parse_datetime(value):
+	if not value:
+		frappe.throw(_("A date and time is required."), title=_("Invalid time"))
+	try:
+		return get_datetime(value)
+	except (ValueError, TypeError):
+		frappe.throw(_("{0} is not a valid date and time.").format(frappe.bold(value)), title=_("Invalid time"))
 
 
 @frappe.whitelist()
@@ -309,6 +343,8 @@ def record_discrepancy(gate_pass: str, rows: str, notes: str, reason: str = ""):
 		)
 
 	payload = json.loads(rows) if isinstance(rows, str) else rows
+	if not isinstance(payload, dict):
+		frappe.throw(_("Discrepancy rows must be given per Gate Pass Item row."))
 	changes = []
 
 	for row in gp.items:
@@ -324,6 +360,10 @@ def record_discrepancy(gate_pass: str, rows: str, notes: str, reason: str = ""):
 		row.rejected_qty = flt(update.get("rejected_qty"))
 		row.discrepancy_reason = update.get("discrepancy_reason") or row.discrepancy_reason
 		row.rejected_warehouse = update.get("rejected_warehouse") or row.rejected_warehouse
+		if min(row.shortage_qty, row.damaged_qty, row.rejected_qty) < 0:
+			frappe.throw(
+				_("Row {0}: shortage, damage and rejection cannot be negative.").format(row.idx)
+			)
 		row.accepted_qty = (
 			flt(row.qty) - row.shortage_qty - row.damaged_qty - row.rejected_qty
 		)
@@ -428,6 +468,13 @@ def override_compliance(gate_pass: str, reason: str):
 	_require_role("compliance_override_roles", _("override compliance checks"))
 	frappe.has_permission("Gate Pass", "submit", gate_pass, throw=True)
 
+	# The override releases a block at submit, so it belongs on a draft. Allowing it
+	# later would let a submitted or cancelled pass be re-labelled as overridden.
+	if frappe.db.get_value("Gate Pass", gate_pass, "docstatus") != 0:
+		frappe.throw(
+			_("A compliance override can only be recorded on a draft Gate Pass, before it is submitted.")
+		)
+
 	frappe.db.set_value("Gate Pass", gate_pass, {
 		"compliance_override_by": frappe.session.user,
 		"compliance_override_reason": reason,
@@ -508,12 +555,14 @@ def yard_status(location: str | None = None) -> list[dict]:
 	filters = {"docstatus": 1, "status": ["in", ["Inside", "At Gate", "Partially Processed"]]}
 	if location:
 		filters["location"] = location
-	return frappe.get_all(
+	# get_list, not get_all: the caller only sees the passes they may read.
+	# Newest first, so the 200-row cap drops the oldest rather than the latest arrivals.
+	return frappe.get_list(
 		"Gate Pass",
 		filters=filters,
 		fields=["name", "direction", "status", "party", "vehicle_number",
 		        "entry_datetime", "total_qty", "location"],
-		order_by="entry_datetime asc",
+		order_by="entry_datetime desc",
 		limit=200,
 	)
 
@@ -531,12 +580,25 @@ def _check_source_access(source_doctype: str, source_name: str):
 	"""
 	if frappe.has_permission(source_doctype, "read", source_name):
 		return
-	if frappe.has_permission("Gate Pass", "create"):
+	# The role check is relaxed for gate operators, so User Permissions (company,
+	# location) are the only restriction left and must still hold.
+	if frappe.has_permission("Gate Pass", "create") and _passes_user_permissions(
+		source_doctype, source_name
+	):
 		return
 	frappe.throw(
 		_("You do not have permission to read {0} {1}.").format(_(source_doctype), source_name),
 		frappe.PermissionError,
 	)
+
+
+def _passes_user_permissions(doctype: str, name: str) -> bool:
+	"""The framework's own single-document User Permission check."""
+	from frappe.permissions import has_user_permission
+
+	if not name or not frappe.db.exists(doctype, name):
+		return False
+	return bool(has_user_permission(frappe.get_doc(doctype, name), ptype="read"))
 
 
 def _has_role(settings_field: str) -> bool:

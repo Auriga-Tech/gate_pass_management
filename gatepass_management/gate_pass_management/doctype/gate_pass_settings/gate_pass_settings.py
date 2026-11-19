@@ -8,6 +8,21 @@ from frappe.model.document import Document
 
 from gatepass_management.rules import catalogue
 
+# (doctype, field) : the setting that must be on for it to show.
+# Only settings this app has. A name that does not exist reads as off and would hide the field
+# for good, so test_wiring-style checks should keep every key here real.
+HIDDEN_BY_FEATURE = {
+	("Gate Pass", "sb_discrepancy"): "enable_discrepancy",
+	("Gate Pass Item", "sb_disc"): "enable_discrepancy",
+	("Gate Pass Item", "sb_disc2"): "enable_discrepancy",
+	("Gate Pass", "total_amount"): "enable_valuation",
+	("Gate Pass Item", "sb_value"): "enable_valuation",
+	("Gate Pass", "sb_weight"): "enable_weighbridge",
+	("Gate Pass Item", "batch_no"): "enable_batch_serial",
+	("Gate Pass Item", "serial_no"): "enable_batch_serial",
+	("Gate Pass", "cost_center"): "enable_cost_center",
+}
+
 
 class GatePassSettings(Document):
 	def validate(self):
@@ -15,6 +30,7 @@ class GatePassSettings(Document):
 		self._validate_field_rules()
 		self._validate_tracking_template()
 		self._apply_naming_series()
+		self._apply_feature_visibility()
 
 	def on_update(self):
 		frappe.clear_cache(doctype="Gate Pass")
@@ -86,6 +102,21 @@ class GatePassSettings(Document):
 			"Gate Pass", "naming_series", "options", "\n".join(series), "Text",
 			validate_fields_for_doctype=False,
 		)
+
+
+	def _apply_feature_visibility(self):
+		"""Hide the sections a disabled feature owns, for the whole site.
+
+		A Property Setter rather than `depends_on`: this is a site-wide decision, and the field
+		should not reappear when some other value on the form changes.
+		"""
+		from frappe.custom.doctype.property_setter.property_setter import make_property_setter
+
+		for (doctype, fieldname), setting in HIDDEN_BY_FEATURE.items():
+			make_property_setter(
+				doctype, fieldname, "hidden", 0 if self.get(setting) else 1, "Check",
+				validate_fields_for_doctype=False,
+			)
 
 
 @frappe.whitelist()

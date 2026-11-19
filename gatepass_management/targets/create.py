@@ -126,6 +126,7 @@ def _build_one(gp, config, target_doctype, source_document, rows) -> str:
 	target.gate_pass = gp.name
 	if target.meta.has_field("posting_date") and gp.posting_date:
 		target.posting_date = gp.posting_date
+	_apply_cost_center(gp, target)
 
 	# No ignore_validate, no ignore_mandatory. If ERPNext refuses, the refusal is
 	# the answer and it reaches the user verbatim.
@@ -261,6 +262,21 @@ def _erpnext_mapper(gp, config, target_doctype, source_document):
 			_("This ERPNext version does not expose {0}. Set a custom mapper on the "
 			  "Gate Pass Source.").format(path)
 		)
+
+
+def _apply_cost_center(gp, target):
+	"""Carry the gate pass's cost center onto the target, only when one was chosen.
+
+	A blank one leaves what ERPNext's mapper took from the order. Header and rows both, each only
+	where the doctype has the field.
+	"""
+	if not gp.get("cost_center"):
+		return
+	if target.meta.has_field("cost_center"):
+		target.cost_center = gp.cost_center
+	for item in target.get("items") or []:
+		if item.meta.has_field("cost_center"):
+			item.cost_center = gp.cost_center
 
 
 def _row_link_field(target_doctype: str) -> str | None:

@@ -392,7 +392,8 @@
    "fieldname": "enable_mobile_console",
    "fieldtype": "Check",
    "label": "Mobile Gate Console",
-   "default": "1"
+   "default": "1",
+   "hidden": 1
   },
   {
    "fieldname": "enable_packages",
@@ -499,7 +500,8 @@
    "fieldname": "discrepancy_escalation_pct",
    "fieldtype": "Percent",
    "label": "Escalate Above (% of consignment)",
-   "default": "10"
+   "default": "10",
+   "hidden": 1
   },
   {
    "fieldname": "default_rejected_warehouse",
@@ -772,12 +774,13 @@
    "fieldname": "enable_api_rate_limit",
    "fieldtype": "Check",
    "label": "Rate-Limit Public Scan Endpoints",
-   "default": "1"
+   "default": "1",
+   "hidden": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-05 10:00:00.000000",
+ "modified": "2026-11-19 15:30:00.000000",
  "modified_by": "Administrator",
  "module": "Gate Pass Management",
  "name": "Gate Pass Settings",

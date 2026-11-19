@@ -201,6 +201,10 @@ class RuleContext:
 		if not self.violations:
 			return
 
+		from gatepass_management.utils import notify
+
+		notify.on_rule_blocked(self.doc, self.violations)
+
 		if len(self.violations) == 1:
 			v = self.violations[0]
 			frappe.throw(
